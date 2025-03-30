@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react'
 import CourseTable from './components/CourseTable'
 import GraduationCalculator from './components/GraduationCalculator'
 import Auth from './components/Auth'
-import { migrateLocalStorageToDB } from './lib/supabase'
+import { migrateLocalStorageToDB, Course } from './lib/supabase'
 import logo from './assets/logo.svg'
 
 function App() {
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [courses, setCourses] = useState<Course[]>([]);
 
   useEffect(() => {
     // Check if we have userId in localStorage (quick check before auth process)
@@ -29,6 +30,10 @@ function App() {
   const handleLogout = () => {
     setUserId(null);
     localStorage.removeItem('userId');
+  };
+
+  const handleCoursesUpdate = (updatedCourses: Course[]) => {
+    setCourses(updatedCourses);
   };
 
   if (loading) {
@@ -53,8 +58,8 @@ function App() {
         </button>
       </header>
       <div className="space-y-8">
-        <CourseTable userId={userId} />
-        <GraduationCalculator />
+        <CourseTable userId={userId} onCoursesUpdate={handleCoursesUpdate} />
+        <GraduationCalculator courses={courses} />
       </div>
     </div>
   )

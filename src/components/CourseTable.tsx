@@ -19,9 +19,10 @@ import { getCourses, addCourse, deleteCourse, updateCourse, Course } from '../li
 
 interface CourseTableProps {
   userId: string;
+  onCoursesUpdate?: (courses: Course[]) => void;
 }
 
-const CourseTable: React.FC<CourseTableProps> = ({ userId }) => {
+const CourseTable: React.FC<CourseTableProps> = ({ userId, onCoursesUpdate }) => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [semesters, setSemesters] = useState<string[]>(['2025년 상반기', '2025년 하반기']);
@@ -32,6 +33,9 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId }) => {
       try {
         const fetchedCourses = await getCourses(userId);
         setCourses(fetchedCourses);
+        if (onCoursesUpdate) {
+          onCoursesUpdate(fetchedCourses);
+        }
       } catch (error) {
         console.error('Error fetching courses:', error);
       } finally {
@@ -40,7 +44,7 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId }) => {
     };
 
     fetchCourses();
-  }, [userId]);
+  }, [userId, onCoursesUpdate]);
 
   const sensors = useSensors(
     useSensor(MouseSensor),
@@ -51,12 +55,20 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId }) => {
     const { active, over } = event;
     
     if (over && active.id !== over.id) {
+      let updatedCourses: Course[] = [];
+      
       setCourses((items) => {
         const oldIndex = items.findIndex((item) => item.id === active.id);
         const newIndex = items.findIndex((item) => item.id === over.id);
         
-        return arrayMove(items, oldIndex, newIndex);
+        updatedCourses = arrayMove(items, oldIndex, newIndex);
+        return updatedCourses;
       });
+      
+      // 상위 컴포넌트에 변경 알림
+      if (onCoursesUpdate) {
+        onCoursesUpdate(updatedCourses);
+      }
       
       // TODO: Update order in Supabase if needed
     }
@@ -73,7 +85,11 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId }) => {
       console.log('New course added:', newCourse);
       
       if (newCourse) {
-        setCourses([...courses, newCourse]);
+        const updatedCourses = [...courses, newCourse];
+        setCourses(updatedCourses);
+        if (onCoursesUpdate) {
+          onCoursesUpdate(updatedCourses);
+        }
       } else {
         console.error('Failed to add course, newCourse is null');
       }
@@ -86,7 +102,11 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId }) => {
     try {
       const success = await deleteCourse(id);
       if (success) {
-        setCourses(courses.filter(course => course.id !== id));
+        const updatedCourses = courses.filter(course => course.id !== id);
+        setCourses(updatedCourses);
+        if (onCoursesUpdate) {
+          onCoursesUpdate(updatedCourses);
+        }
       }
     } catch (error) {
       console.error('Error deleting course:', error);
