@@ -25,7 +25,7 @@ export interface Course {
   credits: number;
   semester: string;
   Advanced_tag?: '선도적세계인' | '실천적사회인' | '창의적전문인';
-  Basic_tag?: '글쓰기' | '외국어' | 'S/W' | '인성';
+  Basic_tag?: '글쓰기' | '외국어' | 'S/W' | '인성' | '취창업';
   user_id?: string;
   created_at?: string;
 }

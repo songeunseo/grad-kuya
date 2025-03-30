@@ -8,7 +8,7 @@ interface CourseProps {
   type: string;
   credits: number;
   Advanced_tag?: '선도적세계인' | '실천적사회인' | '창의적전문인';
-  Basic_tag?: '글쓰기' | '외국어' | 'S/W' | '인성';
+  Basic_tag?: '글쓰기' | '외국어' | 'S/W' | '인성' | '취창업';
 }
 
 export const CourseItem: React.FC<CourseProps> = ({ id, name, type, credits, Advanced_tag, Basic_tag }) => {

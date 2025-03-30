@@ -13,7 +13,7 @@ const AddCourseForm: React.FC<CourseFormProps> = ({ onAddCourse, semesters = [] 
   const [credits, setCredits] = useState(3);
   const [semester, setSemester] = useState('');
   const [advancedTag, setAdvancedTag] = useState<'선도적세계인' | '실천적사회인' | '창의적전문인' | ''>('선도적세계인');
-  const [basicTag, setBasicTag] = useState<'글쓰기' | '외국어' | 'S/W' | '인성' | ''>('글쓰기');
+  const [basicTag, setBasicTag] = useState<'글쓰기' | '외국어' | 'S/W' | '인성' | '취창업' | ''>('글쓰기');
 
   // 기본 학기 목록 (semesters prop이 비어있을 경우 사용)
   const defaultSemesters = [
@@ -100,6 +100,7 @@ const AddCourseForm: React.FC<CourseFormProps> = ({ onAddCourse, semesters = [] 
     { value: '외국어', label: '외국어' },
     { value: 'S/W', label: 'S/W' },
     { value: '인성', label: '인성' },
+    { value: '취창업', label: '취창업' },
   ];
 
   return (
