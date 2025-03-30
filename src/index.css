@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50 m-0 min-h-screen font-sans text-gray-800;
+  }
+  
+  h1 {
+    @apply text-3xl font-bold;
+  }
+}
+
+@layer components {
+  .course-cell {
+    @apply p-2 border border-gray-300 min-h-[80px] relative;
+  }
+  
+  .course-item {
+    @apply p-1 rounded text-sm mb-1 last:mb-0;
+  }
+} 
