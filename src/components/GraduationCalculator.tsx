@@ -45,7 +45,6 @@ const GraduationCalculator: React.FC<GraduationCalculatorProps> = ({ courses, us
         if (settings && settings.credit_requirements && settings.credit_requirements.length > 0) {
           setCreditTypes(settings.credit_requirements);
           setEditableCredits(settings.credit_requirements);
-          console.log('불러온 기준학점:', settings.credit_requirements);
         } else {
           // 설정이 없으면 로컬 스토리지에서 시도
           loadFromLocalStorage();
@@ -53,7 +52,6 @@ const GraduationCalculator: React.FC<GraduationCalculatorProps> = ({ courses, us
         
         if (settings && settings.total_credit_required) {
           setTotalRequired(settings.total_credit_required);
-          console.log('불러온 총 기준학점:', settings.total_credit_required);
         }
       } catch (error) {
         console.error('기준학점 설정 불러오기 실패:', error);
@@ -211,12 +209,9 @@ const GraduationCalculator: React.FC<GraduationCalculatorProps> = ({ courses, us
           total_credit_required: totalRequired
         };
         
-        console.log('기준학점 설정 저장 시도:', settings);
         const result = await saveUserSettings(settings);
         
-        if (result) {
-          console.log('기준학점 설정 저장 성공');
-        } else {
+        if (!result) {
           console.warn('기준학점 설정 저장 실패');
         }
       } catch (error) {

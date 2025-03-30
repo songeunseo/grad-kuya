@@ -21,37 +21,25 @@ function App() {
 
     // 테이블 존재 여부 확인
     const verifySupabase = async () => {
-      const exists = await checkTablesExist();
-      console.log('Supabase 테이블 확인 결과:', exists);
+      await checkTablesExist();
     };
 
     verifySupabase();
-
-    // 파비콘 로드 확인
-    const faviconLink = document.querySelector('link[rel="icon"]');
-    if (faviconLink) {
-      console.log('파비콘 설정 확인: ', faviconLink.getAttribute('href'));
-    } else {
-      console.warn('파비콘이 설정되지 않았습니다.');
-    }
   }, []);
 
   const handleLogin = async (userId: string) => {
-    console.log('로그인 처리, 사용자 ID:', userId);
     setUserId(userId);
     localStorage.setItem('userId', userId);
     
     // 인증 상태 확인
-    const { data: { session } } = await supabase.auth.getSession();
-    console.log('로그인 후 세션 정보:', session);
+    await supabase.auth.getSession();
     
     // Migrate localStorage data to Supabase if needed
     await migrateLocalStorageToDB(userId);
     
     // 테스트용 샘플 과목 추가 시도
     try {
-      const result = await directAddSampleCourse(userId);
-      console.log('샘플 과목 추가 결과:', result);
+      await directAddSampleCourse(userId);
     } catch (error) {
       console.error('샘플 과목 추가 실패:', error);
     }
@@ -60,7 +48,6 @@ function App() {
   const handleLogout = async () => {
     // Supabase 세션 종료
     await supabase.auth.signOut();
-    console.log('Supabase 로그아웃 완료');
     
     // 로컬 상태 초기화
     setUserId(null);

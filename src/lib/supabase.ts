@@ -7,23 +7,15 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 // Supabase 클라이언트 생성 또는 로컬 스토리지 폴백 준비
 let supabaseEnabled = false;
 
-console.log('Supabase 초기화 시작...');
-console.log('Supabase URL 존재 여부:', !!supabaseUrl);
-console.log('Supabase Anon Key 존재 여부:', !!supabaseAnonKey);
-
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Supabase 환경 변수가 없습니다. 로컬 스토리지 모드로 작동합니다.');
 } else {
-  console.log('Supabase URL:', supabaseUrl);
-  console.log('Supabase 클라이언트 생성 중...');
   supabaseEnabled = true;
 }
 
 export const supabase = supabaseEnabled ? 
   createClient(supabaseUrl, supabaseAnonKey) : 
   createClient('https://placeholder.supabase.co', 'placeholder');
-
-console.log('Supabase 클라이언트 초기화 완료, 활성화 상태:', supabaseEnabled);
 
 // 모델 정의
 export interface Course {
@@ -73,8 +65,6 @@ export async function checkTablesExist() {
     console.error('Supabase가 활성화되지 않아 테이블을 확인할 수 없습니다.');
     return false;
   }
-
-  console.log('Supabase 테이블 존재 여부 확인 중...');
   
   try {
     // 테이블 접근 테스트
@@ -88,7 +78,6 @@ export async function checkTablesExist() {
       return false;
     }
     
-    console.log('테이블이 접근 가능합니다. 테이블에 레코드가 있나요?', data?.length > 0 ? '예' : '아니오');
     return true;
   } catch (err) {
     console.error('테이블 확인 중 예외 발생:', err);
@@ -104,7 +93,6 @@ export async function getCourses(userId: string): Promise<Course[]> {
   }
   
   try {
-    console.log('Supabase에서 과목 가져오기 시도, userId:', userId);
     const { data, error } = await supabase
       .from('courses')
       .select('*');
@@ -114,8 +102,6 @@ export async function getCourses(userId: string): Promise<Course[]> {
       console.warn('로컬 스토리지로 대체합니다.');
       return getCoursesFromLocalStorage();
     }
-    
-    console.log(`Supabase에서 ${data?.length || 0}개 과목을 가져왔습니다.`);
     
     // 대소문자 변환
     const convertedData = data?.map(course => ({
@@ -133,16 +119,12 @@ export async function getCourses(userId: string): Promise<Course[]> {
 
 // 과목 추가 - Supabase에 저장
 export async function addCourse(course: Omit<Course, 'id' | 'created_at'>) {
-  console.log('과목 추가 시도:', course);
-  
   if (!supabaseEnabled) {
     console.warn('Supabase가 비활성화되어 로컬 스토리지에만 저장합니다.');
     return addCourseToLocalStorage(course);
   }
   
   try {
-    console.log('Supabase에 과목 추가 시도:', course.name);
-    
     // Supabase 테이블 컬럼 이름을 소문자로 변환
     const supabaseCourse = {
       name: course.name,
@@ -155,23 +137,17 @@ export async function addCourse(course: Omit<Course, 'id' | 'created_at'>) {
       ...(course.Basic_tag ? { basic_tag: course.Basic_tag } : {})
     };
     
-    console.log('변환된 데이터:', supabaseCourse);
-    
     // Supabase에 저장 시도
     const { data, error, status } = await supabase
       .from('courses')
       .insert([supabaseCourse])
       .select();
     
-    console.log('Supabase 응답 상태:', status);
-    
     if (error) {
       console.error('Supabase 과목 추가 오류:', error);
       console.warn('로컬 스토리지에 대신 저장합니다.');
       return addCourseToLocalStorage(course);
     }
-    
-    console.log('Supabase 과목 추가 성공:', data);
     
     // 결과를 원래 양식으로 변환 (첫글자 대문자)
     if (data && data[0]) {
@@ -202,7 +178,6 @@ function addCourseToLocalStorage(course: Omit<Course, 'id' | 'created_at'>): Cou
   
   courses.push(newCourse);
   saveCoursesToLocalStorage(courses);
-  console.log('로컬 스토리지에 과목 추가됨:', newCourse);
   
   return newCourse;
 }
@@ -215,8 +190,6 @@ export async function updateCourse(course: Course) {
   }
   
   try {
-    console.log('Supabase에서 과목 업데이트:', course.id);
-    
     // Supabase 테이블 컬럼 이름을 소문자로 변환
     const supabaseCourse = {
       ...course,
@@ -239,8 +212,6 @@ export async function updateCourse(course: Course) {
       console.warn('로컬 스토리지에서 대신 업데이트합니다.');
       return updateCourseInLocalStorage(course);
     }
-    
-    console.log('Supabase 과목 업데이트 성공:', data);
     
     // 결과를 원래 양식으로 변환
     if (data && data[0]) {
@@ -268,7 +239,6 @@ function updateCourseInLocalStorage(course: Course): Course {
   if (index !== -1) {
     courses[index] = course;
     saveCoursesToLocalStorage(courses);
-    console.log('로컬 스토리지 과목 업데이트됨:', course);
     return course;
   }
   
@@ -284,7 +254,6 @@ export async function deleteCourse(id: string) {
   }
   
   try {
-    console.log('Supabase에서 과목 삭제:', id);
     const { error } = await supabase
       .from('courses')
       .delete()
@@ -296,7 +265,6 @@ export async function deleteCourse(id: string) {
       return deleteCourseFromLocalStorage(id);
     }
     
-    console.log('Supabase 과목 삭제 성공');
     return true;
   } catch (err) {
     console.error('Supabase 연결 오류:', err);
@@ -312,7 +280,6 @@ function deleteCourseFromLocalStorage(id: string): boolean {
   
   if (filteredCourses.length !== courses.length) {
     saveCoursesToLocalStorage(filteredCourses);
-    console.log('로컬 스토리지에서 과목 삭제됨:', id);
     return true;
   }
   
@@ -343,7 +310,6 @@ export async function migrateLocalStorageToDB(userId: string) {
     if (error) {
       console.error('데이터 마이그레이션 오류:', error);
     } else {
-      console.log('데이터 마이그레이션 성공');
       localStorage.removeItem('courses'); // 마이그레이션 성공 후 로컬 스토리지 삭제
     }
   } catch (error) {
@@ -353,8 +319,6 @@ export async function migrateLocalStorageToDB(userId: string) {
 
 // 과목 추가 - RLS 우회 버전
 export async function addCourseNoRLS(course: Omit<Course, 'id' | 'created_at'>) {
-  console.log('RLS 우회 과목 추가 시도:', course);
-  
   if (supabaseEnabled) {
     try {
       // 정책 우회 옵션 사용
@@ -363,8 +327,6 @@ export async function addCourseNoRLS(course: Omit<Course, 'id' | 'created_at'>) 
         .insert([course])
         .select();
       
-      console.log('Supabase RLS 우회 응답 상태:', status);
-      
       if (error) {
         console.error('Supabase RLS 우회 과목 추가 오류:', error);
         console.log('오류 코드:', error.code);
@@ -372,7 +334,6 @@ export async function addCourseNoRLS(course: Omit<Course, 'id' | 'created_at'>) 
         return null;
       }
       
-      console.log('Supabase RLS 우회 과목 추가 성공:', data);
       return data ? data[0] : null;
     } catch (err) {
       console.error('Supabase 예외 발생:', err);
@@ -401,11 +362,8 @@ export async function checkAuth() {
     }
     
     if (!authData.session?.user?.id) {
-      console.log('인증된 사용자 없음 (로그인 필요)');
       return { success: false, message: '로그인 필요' };
     }
-    
-    console.log('인증된 사용자 ID:', authData.session.user.id);
     
     // 간단한 테스트 쿼리 실행
     const { data: testData, error: testError } = await supabase
@@ -436,7 +394,6 @@ export async function directAddSampleCourse(userId: string) {
     return null;
   }
 
-  console.log('샘플 과목 직접 추가 시도...');
   const sampleCourse = {
     name: '샘플 과목 (테스트)',
     type: '기교',
@@ -449,7 +406,6 @@ export async function directAddSampleCourse(userId: string) {
   try {
     // 인증 상태 확인
     const { data: authData } = await supabase.auth.getSession();
-    console.log('현재 인증 상태:', authData?.session?.user?.id);
     
     // Supabase에 직접 추가
     const { data, error } = await supabase
@@ -462,7 +418,6 @@ export async function directAddSampleCourse(userId: string) {
       return null;
     }
     
-    console.log('샘플 과목 Supabase에 추가 성공:', data);
     return data ? data[0] : null;
   } catch (err) {
     console.error('샘플 과목 추가 중 예외 발생:', err);
@@ -478,8 +433,6 @@ export async function getUserSettings(userId: string): Promise<UserSettings | nu
   }
   
   try {
-    console.log('Supabase에서 사용자 설정 가져오기, userId:', userId);
-    
     // 먼저 현재 세션이 유효한지 확인
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     if (sessionError || !session) {
@@ -487,16 +440,10 @@ export async function getUserSettings(userId: string): Promise<UserSettings | nu
       return null;
     }
     
-    console.log('유효한 세션 확인됨, 인증된 사용자:', session.user.id);
-    console.log('요청 사용자 ID:', userId);
-    
     // RLS 정책 확인: 사용자 ID가 일치하는지 확인
     if (session.user.id !== userId) {
       console.warn('세션 사용자 ID와 요청 사용자 ID가 일치하지 않습니다. RLS 정책으로 인해 액세스가 거부될 수 있습니다.');
     }
-    
-    // 테이블 접근 권한 테스트
-    console.log('user_settings 테이블 접근 시도...');
     
     // 사용자 설정 쿼리
     const { data, error } = await supabase
@@ -514,7 +461,6 @@ export async function getUserSettings(userId: string): Promise<UserSettings | nu
       
       // PGRST116은 단일 레코드를 찾을 수 없음을 의미 - 오류가 아님
       if (error.code === 'PGRST116') {
-        console.log('사용자 설정이 없습니다. 새로 생성이 필요합니다.');
         return null;
       }
       
@@ -531,7 +477,6 @@ export async function getUserSettings(userId: string): Promise<UserSettings | nu
       return null;
     }
     
-    console.log('사용자 설정 가져오기 성공:', data);
     return data;
   } catch (err) {
     console.error('사용자 설정 가져오기 예외:', err);
@@ -547,15 +492,6 @@ export async function saveUserSettings(settings: UserSettings): Promise<UserSett
   }
   
   try {
-    console.log('사용자 설정 저장 시도...', JSON.stringify(settings, null, 2));
-    console.log('각 필드 확인:');
-    console.log('- user_id:', settings.user_id);
-    console.log('- semesters:', settings.semesters);
-    console.log('- visible_types:', settings.visible_types);
-    console.log('- course_types_order:', settings.course_types_order);
-    console.log('- credit_requirements:', settings.credit_requirements);
-    console.log('- total_credit_required:', settings.total_credit_required);
-    
     // 배열 필드가 undefined인 경우 빈 배열로 초기화 
     // JSONB 타입으로 저장하기 위해 JSON.stringify 처리할 필요 없음
     // Supabase가 자동으로 JavaScript 배열을 JSONB로 변환
@@ -575,17 +511,12 @@ export async function saveUserSettings(settings: UserSettings): Promise<UserSett
       return null;
     }
     
-    console.log('유효한 세션 확인됨:', session.user.id);
-    console.log('저장할 설정(안전처리 후):', JSON.stringify(safeSettings, null, 2));
-    
     // 기존 설정이 있는지 확인
     const { data: existingData, error: checkError } = await supabase
       .from('user_settings')
       .select('id')
       .eq('user_id', safeSettings.user_id)
       .maybeSingle();
-    
-    console.log('기존 설정 확인 결과:', existingData, checkError);
     
     if (checkError) {
       // 테이블이 존재하지 않는 오류인 경우 (42P01)
@@ -604,7 +535,6 @@ export async function saveUserSettings(settings: UserSettings): Promise<UserSett
     
     if (existingData?.id) {
       // 기존 설정 업데이트
-      console.log('기존 설정 업데이트 시도:', existingData.id);
       const updatePayload = {
         semesters: safeSettings.semesters,
         visible_types: safeSettings.visible_types,
@@ -613,7 +543,6 @@ export async function saveUserSettings(settings: UserSettings): Promise<UserSett
         total_credit_required: safeSettings.total_credit_required,
         updated_at: new Date().toISOString()
       };
-      console.log('업데이트 페이로드:', JSON.stringify(updatePayload, null, 2));
       
       const { data, error } = await supabase
         .from('user_settings')
@@ -621,8 +550,6 @@ export async function saveUserSettings(settings: UserSettings): Promise<UserSett
         .eq('id', existingData.id)
         .select()
         .single();
-      
-      console.log('업데이트 결과:', data, error);
       
       if (error) {
         console.error('설정 업데이트 오류:', error);
@@ -636,7 +563,6 @@ export async function saveUserSettings(settings: UserSettings): Promise<UserSett
       result = data;
     } else {
       // 새 설정 생성
-      console.log('새 설정 생성 시도');
       const insertData = {
         user_id: safeSettings.user_id,
         semesters: safeSettings.semesters,
@@ -645,15 +571,12 @@ export async function saveUserSettings(settings: UserSettings): Promise<UserSett
         credit_requirements: safeSettings.credit_requirements,
         total_credit_required: safeSettings.total_credit_required
       };
-      console.log('삽입할 데이터:', JSON.stringify(insertData, null, 2));
       
       const { data, error } = await supabase
         .from('user_settings')
         .insert([insertData])
         .select()
         .single();
-      
-      console.log('삽입 결과:', data, error);
       
       if (error) {
         console.error('설정 생성 오류:', error);
@@ -670,7 +593,6 @@ export async function saveUserSettings(settings: UserSettings): Promise<UserSett
       result = data;
     }
     
-    console.log('설정 저장 성공:', result);
     return result;
   } catch (err) {
     console.error('설정 저장 중 예외 발생:', err);
@@ -695,15 +617,12 @@ export async function testTablePermissions() {
     }
     
     if (!authData.session?.user?.id) {
-      console.log('인증된 사용자 없음 (로그인 필요)');
       return { success: false, message: '로그인 필요' };
     }
     
     const userId = authData.session.user.id;
-    console.log('인증된 사용자 ID:', userId);
     
     // courses 테이블 접근 테스트
-    console.log('courses 테이블 접근 테스트...');
     const { data: coursesData, error: coursesError } = await supabase
       .from('courses')
       .select('count')
@@ -711,12 +630,9 @@ export async function testTablePermissions() {
     
     if (coursesError) {
       console.error('courses 테이블 접근 오류:', coursesError);
-    } else {
-      console.log('courses 테이블 접근 성공');
     }
     
     // user_settings 테이블 접근 테스트
-    console.log('user_settings 테이블 접근 테스트...');
     const { data: settingsData, error: settingsError } = await supabase
       .from('user_settings')
       .select('count')
@@ -741,8 +657,6 @@ export async function testTablePermissions() {
         userId 
       };
     }
-    
-    console.log('user_settings 테이블 접근 성공');
     
     // user_settings 테이블에 기존 설정이 있는지 확인
     const { data: existingSettings, error: existingError } = await supabase
