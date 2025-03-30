@@ -144,6 +144,31 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId, onCoursesUpdate }) =>
     }
   };
 
+  const handleUpdateCourse = async (id: string, updates: {name?: string, credits?: number}) => {
+    try {
+      const courseToUpdate = courses.find(course => course.id === id);
+      if (!courseToUpdate) return;
+
+      const updatedCourse = {
+        ...courseToUpdate,
+        ...updates
+      };
+
+      const result = await updateCourse(updatedCourse);
+      if (result) {
+        const updatedCourses = courses.map(course => 
+          course.id === id ? updatedCourse : course
+        );
+        setCourses(updatedCourses);
+        if (onCoursesUpdate) {
+          onCoursesUpdate(updatedCourses);
+        }
+      }
+    } catch (error) {
+      console.error('Error updating course:', error);
+    }
+  };
+
   const handleSemestersChange = (updatedSemesters: string[]) => {
     setSemesters(updatedSemesters);
     // localStorage에 학기 목록 저장
@@ -225,7 +250,7 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId, onCoursesUpdate }) =>
       case '지필': return 'bg-sky-100/50 hover:bg-sky-100/70';
       case '전필': return 'bg-emerald-100/50 hover:bg-emerald-100/70';
       case '전선': return 'bg-emerald-50/50 hover:bg-emerald-50/70';
-      case '전기': return 'bg-emerald-200/50 hover:bg-emerald-200/70';
+      case '전기': return 'bg-emerald-50/70 hover:bg-emerald-50/90';
       case '일선': return 'bg-gray-50/50 hover:bg-gray-50/70';
       case '교직': return 'bg-violet-50/50 hover:bg-violet-50/70';
       case '반교': return 'bg-orange-50/50 hover:bg-orange-50/70';
@@ -319,6 +344,7 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId, onCoursesUpdate }) =>
                                   credits={course.credits}
                                   Advanced_tag={course.Advanced_tag}
                                   Basic_tag={course.Basic_tag}
+                                  onUpdate={handleUpdateCourse}
                                 />
                                 <button
                                   onClick={() => handleDeleteCourse(course.id)}
