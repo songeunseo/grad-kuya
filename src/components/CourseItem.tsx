@@ -55,6 +55,17 @@ export const CourseItem: React.FC<CourseProps> = ({ id, name, type, credits, Adv
     }
   };
 
+  // 6자 이상이면 ...으로 표시
+  const truncateName = (name: string) => {
+    if (name.length > 6) {
+      return name.slice(0, 6) + '...';
+    }
+    return name;
+  };
+
+  // 태그가 있는지 확인
+  const hasTag = Advanced_tag || (type === '기교' && Basic_tag) || type === '심교';
+
   return (
     <div
       ref={setNodeRef}
@@ -64,29 +75,40 @@ export const CourseItem: React.FC<CourseProps> = ({ id, name, type, credits, Adv
       className={`
         ${getTypeColor(type)} 
         border 
-        p-2.5 
+        ${hasTag ? 'p-2.5 mb-2' : 'py-1.5 px-2.5 mb-1'} 
         rounded-lg 
         shadow-sm 
         cursor-move 
-        mb-2
         hover:shadow-md 
         transition-shadow
         duration-200
       `}
+      title={name}
     >
-      <div className="text-sm font-semibold text-gray-800">{name}</div>
-      <div className="text-xs mt-1 text-gray-600 flex justify-between">
-        {(Advanced_tag || (type === '기교' && Basic_tag)) ? (
-          <span className={`${getTagColor(type)} px-2 py-0.5 rounded-full text-[10px] font-medium border`}>
-            {Advanced_tag || Basic_tag}
+      {hasTag ? (
+        <>
+          <div className="text-sm font-semibold text-gray-800">{truncateName(name)}</div>
+          <div className="text-xs mt-1 text-gray-600 flex justify-between">
+            {(Advanced_tag || (type === '기교' && Basic_tag)) ? (
+              <span className={`${getTagColor(type)} px-2 py-0.5 rounded-full text-[10px] font-medium border`}>
+                {Advanced_tag || Basic_tag}
+              </span>
+            ) : (
+              <span></span>
+            )}
+            <span className="bg-white px-2 py-0.5 rounded-full text-gray-600 text-[10px] font-bold">
+              {credits}학점
+            </span>
+          </div>
+        </>
+      ) : (
+        <div className="flex justify-between items-center">
+          <div className="text-sm font-semibold text-gray-800 truncate max-w-[70%]">{truncateName(name)}</div>
+          <span className="bg-white ml-1 px-1.5 py-0.5 rounded-full text-gray-600 text-[10px] font-bold whitespace-nowrap">
+            {credits}학점
           </span>
-        ) : (
-          <span></span>
-        )}
-        <span className="bg-white px-2 py-0.5 rounded-full text-gray-600 text-[10px] font-bold">
-          {credits}학점
-        </span>
-      </div>
+        </div>
+      )}
     </div>
   );
 }; 
