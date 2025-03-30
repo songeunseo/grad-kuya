@@ -65,7 +65,7 @@ export const CourseItem: React.FC<CourseProps> = ({
       case '기교': return 'bg-amber-50 border-amber-100';
       case '심교': return 'bg-rose-50 border-rose-100';
       case '지교': return 'bg-sky-50 border-sky-100';
-      case '지필': return 'bg-sky-100 border-sky-200';
+      case '지필': return 'bg-purple-50 border-purple-100';
       case '전필': return 'bg-emerald-100 border-emerald-200';
       case '전선': return 'bg-emerald-50 border-emerald-100';
       case '전기': return 'bg-emerald-50 border-emerald-100';
@@ -80,7 +80,7 @@ export const CourseItem: React.FC<CourseProps> = ({
       case '기교': return 'bg-amber-100 border-amber-200 text-amber-800';
       case '심교': return 'bg-rose-100 border-rose-200 text-rose-800';
       case '지교': return 'bg-sky-100 border-sky-200 text-sky-800';
-      case '지필': return 'bg-sky-200 border-sky-300 text-sky-900';
+      case '지필': return 'bg-purple-100 border-purple-200 text-purple-800';
       case '전필': return 'bg-emerald-100 border-emerald-200 text-emerald-800';
       case '전선': return 'bg-emerald-50 border-emerald-100 text-emerald-700';
       case '전기': return 'bg-emerald-200 border-emerald-300 text-emerald-900';

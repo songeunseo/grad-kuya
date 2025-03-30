@@ -54,7 +54,7 @@ const DroppableCell = ({
       case '기교': return 'bg-amber-100/70';
       case '심교': return 'bg-rose-100/70';
       case '지교': return 'bg-sky-100/70';
-      case '지필': return 'bg-sky-200/70';
+      case '지필': return 'bg-purple-100/70';
       case '전필': return 'bg-emerald-100/70';
       case '전선': return 'bg-emerald-50/80';
       case '전기': return 'bg-emerald-50/80';
@@ -483,7 +483,7 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId, onCoursesUpdate }) =>
       case '기교': return 'bg-amber-50/50 hover:bg-amber-50/70';
       case '심교': return 'bg-rose-50/50 hover:bg-rose-50/70';
       case '지교': return 'bg-sky-50/50 hover:bg-sky-50/70';
-      case '지필': return 'bg-sky-100/50 hover:bg-sky-100/70';
+      case '지필': return 'bg-purple-50/50 hover:bg-purple-50/70';
       case '전필': return 'bg-emerald-100/50 hover:bg-emerald-100/70';
       case '전선': return 'bg-emerald-50/50 hover:bg-emerald-50/70';
       case '전기': return 'bg-emerald-50/70 hover:bg-emerald-50/90';
