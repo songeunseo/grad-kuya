@@ -38,6 +38,17 @@ export interface Course {
   created_at?: string;
 }
 
+// 사용자 설정 인터페이스 정의
+export interface UserSettings {
+  id?: string;
+  user_id: string;
+  semesters?: string[];
+  visible_types?: string[];
+  course_types_order?: string[];
+  created_at?: string;
+  updated_at?: string;
+}
+
 // 로컬 스토리지에서 데이터 가져오기
 function getCoursesFromLocalStorage(): Course[] {
   try {
@@ -453,6 +464,108 @@ export async function directAddSampleCourse(userId: string) {
     return data ? data[0] : null;
   } catch (err) {
     console.error('샘플 과목 추가 중 예외 발생:', err);
+    return null;
+  }
+}
+
+// 사용자 설정 가져오기
+export async function getUserSettings(userId: string): Promise<UserSettings | null> {
+  if (!supabaseEnabled || !userId) {
+    console.warn('Supabase가 비활성화되었거나 유저 ID가 없어 로컬 스토리지에서 설정을 가져옵니다.');
+    return null;
+  }
+  
+  try {
+    console.log('Supabase에서 사용자 설정 가져오기, userId:', userId);
+    const { data, error } = await supabase
+      .from('user_settings')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    
+    if (error) {
+      console.error('사용자 설정 가져오기 오류:', error);
+      return null;
+    }
+    
+    console.log('사용자 설정 가져오기 성공:', data);
+    return data;
+  } catch (err) {
+    console.error('사용자 설정 가져오기 예외:', err);
+    return null;
+  }
+}
+
+// 사용자 설정 저장/업데이트
+export async function saveUserSettings(settings: UserSettings): Promise<UserSettings | null> {
+  if (!supabaseEnabled || !settings.user_id) {
+    console.warn('Supabase가 비활성화되었거나 유저 ID가 없어 로컬 스토리지에만 저장합니다.');
+    return null;
+  }
+  
+  try {
+    console.log('사용자 설정 확인 중...');
+    // 기존 설정이 있는지 확인
+    const { data: existingData, error: checkError } = await supabase
+      .from('user_settings')
+      .select('id')
+      .eq('user_id', settings.user_id)
+      .maybeSingle();
+    
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('설정 확인 오류:', checkError);
+      return null;
+    }
+    
+    let result;
+    
+    if (existingData?.id) {
+      // 기존 설정 업데이트
+      console.log('기존 설정 업데이트:', settings);
+      const { data, error } = await supabase
+        .from('user_settings')
+        .update({
+          semesters: settings.semesters,
+          visible_types: settings.visible_types,
+          course_types_order: settings.course_types_order,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingData.id)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('설정 업데이트 오류:', error);
+        return null;
+      }
+      
+      result = data;
+    } else {
+      // 새 설정 생성
+      console.log('새 설정 생성:', settings);
+      const { data, error } = await supabase
+        .from('user_settings')
+        .insert([{
+          user_id: settings.user_id,
+          semesters: settings.semesters,
+          visible_types: settings.visible_types,
+          course_types_order: settings.course_types_order
+        }])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('설정 생성 오류:', error);
+        return null;
+      }
+      
+      result = data;
+    }
+    
+    console.log('설정 저장 성공:', result);
+    return result;
+  } catch (err) {
+    console.error('설정 저장 예외:', err);
     return null;
   }
 } 

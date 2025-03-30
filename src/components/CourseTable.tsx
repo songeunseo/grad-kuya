@@ -24,6 +24,8 @@ import {
   deleteCourse, 
   updateCourse, 
   Course,
+  getUserSettings,
+  saveUserSettings,
   supabase
 } from '../lib/supabase';
 
@@ -96,6 +98,75 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId, onCoursesUpdate }) =>
   const [semesters, setSemesters] = useState<string[]>(['2025년 상반기', '2025년 하반기']);
   const [visibleTypes, setVisibleTypes] = useState<string[]>(['기교', '심교', '지교', '지필', '전필', '전선', '전기', '일선', '교직', '반교']);
   const [courseTypes, setCourseTypes] = useState<string[]>(['기교', '심교', '지교', '지필', '전필', '전선', '전기', '일선', '교직', '반교']);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+
+  // 사용자 설정 로드
+  useEffect(() => {
+    const loadUserSettings = async () => {
+      try {
+        console.log('사용자 설정 로드 시도...');
+        const settings = await getUserSettings(userId);
+        
+        if (settings) {
+          console.log('Supabase에서 사용자 설정 로드 성공:', settings);
+          
+          // 학기 설정 적용
+          if (settings.semesters && settings.semesters.length > 0) {
+            setSemesters(settings.semesters);
+          }
+          
+          // 이수구분 표시 설정 적용
+          if (settings.visible_types && settings.visible_types.length > 0) {
+            setVisibleTypes(settings.visible_types);
+          }
+          
+          // 이수구분 순서 설정 적용
+          if (settings.course_types_order && settings.course_types_order.length > 0) {
+            setCourseTypes(settings.course_types_order);
+          }
+        } else {
+          console.log('Supabase에 저장된 사용자 설정이 없어 로컬 스토리지에서 로드합니다.');
+          
+          // 로컬 스토리지에서 로드
+          const savedSemesters = localStorage.getItem('semesters');
+          const savedVisibleTypes = localStorage.getItem('visibleTypes');
+          const savedOrder = localStorage.getItem('courseTypesOrder');
+          
+          if (savedSemesters) {
+            const parsedSemesters = JSON.parse(savedSemesters);
+            setSemesters(parsedSemesters);
+          }
+          
+          if (savedVisibleTypes) {
+            const parsedVisibleTypes = JSON.parse(savedVisibleTypes);
+            setVisibleTypes(parsedVisibleTypes);
+          }
+          
+          if (savedOrder) {
+            const parsedOrder = JSON.parse(savedOrder);
+            setCourseTypes(parsedOrder);
+          }
+          
+          // 로컬 스토리지 설정을 Supabase에 저장
+          await saveUserSettings({
+            user_id: userId,
+            semesters: savedSemesters ? JSON.parse(savedSemesters) : semesters,
+            visible_types: savedVisibleTypes ? JSON.parse(savedVisibleTypes) : visibleTypes,
+            course_types_order: savedOrder ? JSON.parse(savedOrder) : courseTypes
+          });
+        }
+        
+        setSettingsLoaded(true);
+      } catch (error) {
+        console.error('사용자 설정 로드 실패:', error);
+        setSettingsLoaded(true);
+      }
+    };
+    
+    if (userId && !settingsLoaded) {
+      loadUserSettings();
+    }
+  }, [userId, settingsLoaded]);
 
   // Fetch courses from Supabase
   useEffect(() => {
@@ -287,78 +358,103 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId, onCoursesUpdate }) =>
     }
   };
 
-  const handleSemestersChange = (updatedSemesters: string[]) => {
+  const handleSemestersChange = async (updatedSemesters: string[]) => {
     setSemesters(updatedSemesters);
-    // localStorage에 학기 목록 저장
+    
+    try {
+      // Supabase에 저장
+      await saveUserSettings({
+        user_id: userId,
+        semesters: updatedSemesters,
+        visible_types: visibleTypes,
+        course_types_order: courseTypes
+      });
+      console.log('Supabase에 학기 설정 저장 완료');
+    } catch (error) {
+      console.error('Supabase 학기 설정 저장 실패:', error);
+    }
+    
+    // 로컬 스토리지에도 백업 저장
     localStorage.setItem('semesters', JSON.stringify(updatedSemesters));
   };
 
-  // localStorage에서 학기 정보 불러오기
-  useEffect(() => {
-    const savedSemesters = localStorage.getItem('semesters');
-    if (savedSemesters) {
-      setSemesters(JSON.parse(savedSemesters));
-    }
-  }, []);
-
-  const handleVisibleTypesChange = (types: string[]) => {
+  const handleVisibleTypesChange = async (types: string[]) => {
     setVisibleTypes(types);
-    // localStorage에 이수구분 표시 정보 저장
+    
+    try {
+      // Supabase에 저장
+      await saveUserSettings({
+        user_id: userId,
+        semesters: semesters,
+        visible_types: types,
+        course_types_order: courseTypes
+      });
+      console.log('Supabase에 이수구분 표시 설정 저장 완료');
+    } catch (error) {
+      console.error('Supabase 이수구분 표시 설정 저장 실패:', error);
+    }
+    
+    // 로컬 스토리지에도 백업 저장
     localStorage.setItem('visibleTypes', JSON.stringify(types));
     
-    // localStorage에서 최신 순서를 다시 불러와 적용
+    // 로컬 스토리지에서 순서 불러오기 및 적용
     try {
       const savedOrder = localStorage.getItem('courseTypesOrder');
       if (savedOrder) {
         const parsedOrder = JSON.parse(savedOrder);
-        // 새로운 타입이 있으면 기존 순서 유지하면서 누락된 것만 추가
         let newOrder = [...parsedOrder];
         courseTypes.forEach(type => {
           if (!newOrder.includes(type)) {
             newOrder.push(type);
           }
         });
-        // 존재하지 않는 타입은 제거
         newOrder = newOrder.filter(type => courseTypes.includes(type));
-        
         setCourseTypes(newOrder);
+        
+        // 순서 변경 시에도 Supabase에 저장
+        await saveUserSettings({
+          user_id: userId,
+          semesters: semesters,
+          visible_types: types,
+          course_types_order: newOrder
+        });
       }
     } catch (e) {
-      console.error('Error applying saved course types order:', e);
+      console.error('이수구분 순서 적용 오류:', e);
     }
   };
 
-  // localStorage에서 이수구분 표시 정보 불러오기
-  useEffect(() => {
-    const savedVisibleTypes = localStorage.getItem('visibleTypes');
-    if (savedVisibleTypes) {
-      setVisibleTypes(JSON.parse(savedVisibleTypes));
+  // 이수구분 순서 변경 처리
+  const handleCourseTypesOrderChange = async (newOrder: string[]) => {
+    setCourseTypes(newOrder);
+    localStorage.setItem('courseTypesOrder', JSON.stringify(newOrder));
+    
+    try {
+      // Supabase에 저장
+      await saveUserSettings({
+        user_id: userId,
+        semesters: semesters,
+        visible_types: visibleTypes,
+        course_types_order: newOrder
+      });
+      console.log('Supabase에 이수구분 순서 저장 완료');
+    } catch (error) {
+      console.error('Supabase 이수구분 순서 저장 실패:', error);
     }
-  }, []);
+  };
 
-  // 이수구분 순서 관리
-  useEffect(() => {
-    // localStorage에서 저장된 순서가 있으면 불러오기
-    const savedOrder = localStorage.getItem('courseTypesOrder');
-    if (savedOrder) {
-      try {
-        const parsedOrder = JSON.parse(savedOrder);
-        // 새로운 타입이 있으면 기존 순서 유지하면서 누락된 것만 추가
-        let newOrder = [...parsedOrder];
-        courseTypes.forEach(type => {
-          if (!newOrder.includes(type)) {
-            newOrder.push(type);
-          }
-        });
-        // 존재하지 않는 타입은 제거
-        newOrder = newOrder.filter(type => courseTypes.includes(type));
-        
-        setCourseTypes(newOrder);
-      } catch (e) {
-        console.error('Error parsing saved course types order:', e);
-      }
+  // 이수구분 드래그 앤 드롭 처리를 위한 설정(CourseTypeManager에서 사용)
+  const handleDragEndCourseType = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      const oldIndex = courseTypes.indexOf(active.id as string);
+      const newIndex = courseTypes.indexOf(over.id as string);
+      
+      const newOrderedTypes = arrayMove(courseTypes, oldIndex, newIndex);
+      handleCourseTypesOrderChange(newOrderedTypes);
     }
-  }, []);
+  };
 
   const getTypeStyle = (type: string) => {
     switch (type) {
@@ -388,6 +484,7 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId, onCoursesUpdate }) =>
           allTypes={courseTypes}
           visibleTypes={visibleTypes}
           onVisibleTypesChange={handleVisibleTypesChange}
+          onOrderChange={handleCourseTypesOrderChange}
         />
       </div>
       

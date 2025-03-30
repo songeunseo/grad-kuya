@@ -8,6 +8,7 @@ interface CourseTypeManagerProps {
   allTypes: string[];
   visibleTypes: string[];
   onVisibleTypesChange: (types: string[]) => void;
+  onOrderChange?: (types: string[]) => void;
 }
 
 // 드래그 가능한 이수구분 아이템 컴포넌트
@@ -60,7 +61,8 @@ const SortableTypeItem = ({ type, isSelected, getTypeColor, onToggle }: {
 const CourseTypeManager: React.FC<CourseTypeManagerProps> = ({ 
   allTypes, 
   visibleTypes, 
-  onVisibleTypesChange 
+  onVisibleTypesChange,
+  onOrderChange
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTypes, setSelectedTypes] = useState<string[]>(visibleTypes);
@@ -142,6 +144,11 @@ const CourseTypeManager: React.FC<CourseTypeManagerProps> = ({
       
       // 드래그로 순서 변경하면 즉시 localStorage에 저장하고 적용
       localStorage.setItem('courseTypesOrder', JSON.stringify(newOrderedTypes));
+      
+      // 상위 컴포넌트에 순서 변경 알림 (prop 있는 경우만)
+      if (onOrderChange) {
+        onOrderChange(newOrderedTypes);
+      }
       
       // 현재 선택된 항목들의 순서도 업데이트
       const newOrderedSelectedTypes = newOrderedTypes.filter(type => selectedTypes.includes(type));
