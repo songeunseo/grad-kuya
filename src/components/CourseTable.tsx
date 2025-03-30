@@ -12,7 +12,7 @@ import {
   arrayMove,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { DraggableCourse } from './DraggableCourse';
+import { CourseItem } from './CourseItem';
 import AddCourseForm from './AddCourseForm';
 
 interface Course {
@@ -21,7 +21,8 @@ interface Course {
   type: string;
   credits: number;
   semester: string;
-  tag?: '선도적세계인' | '실천적사회인' | '창의적전문인';
+  Advanced_tag?: '선도적세계인' | '실천적사회인' | '창의적전문인';
+  Basic_tag?: '글쓰기' | '외국어' | 'S/W' | '인성';
 }
 
 const CourseTable: React.FC = () => {
@@ -30,7 +31,7 @@ const CourseTable: React.FC = () => {
       id: '1',
       name: '동아시아를관통하는문화콘텐츠',
       type: '심교',
-      tag: '창의적전문인',
+      Advanced_tag: '창의적전문인',
       credits: 2,
       semester: '2023년 상반기'
     },
@@ -38,6 +39,7 @@ const CourseTable: React.FC = () => {
       id: '2',
       name: '창의적사고와표현',
       type: '기교',
+      Basic_tag: '글쓰기',
       credits: 3,
       semester: '2024년 상반기'
     },
@@ -45,7 +47,7 @@ const CourseTable: React.FC = () => {
       id: '3',
       name: '매스미디어론',
       type: '심교',
-      tag: '선도적세계인',
+      Advanced_tag: '선도적세계인',
       credits: 3,
       semester: '2024년 상반기'
     },
@@ -378,12 +380,13 @@ const CourseTable: React.FC = () => {
                           .filter(course => course.semester === semester && course.type === type)
                           .map(course => (
                             <div key={course.id} className="relative group">
-                              <DraggableCourse
+                              <CourseItem
                                 id={course.id}
                                 name={course.name}
                                 type={course.type}
                                 credits={course.credits}
-                                tag={course.tag}
+                                Advanced_tag={course.Advanced_tag}
+                                Basic_tag={course.Basic_tag}
                               />
                               <button
                                 onClick={() => handleDeleteCourse(course.id)}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface CourseFormProps {
   onAddCourse: (course: {
@@ -6,6 +6,8 @@ interface CourseFormProps {
     type: string;
     credits: number;
     semester: string;
+    Advanced_tag?: '선도적세계인' | '실천적사회인' | '창의적전문인';
+    Basic_tag?: '글쓰기' | '외국어' | 'S/W' | '인성';
   }) => void;
 }
 
@@ -14,7 +16,23 @@ const AddCourseForm: React.FC<CourseFormProps> = ({ onAddCourse }) => {
   const [type, setType] = useState('기교');
   const [credits, setCredits] = useState(3);
   const [semester, setSemester] = useState('2024년 상반기');
+  const [advancedTag, setAdvancedTag] = useState<'선도적세계인' | '실천적사회인' | '창의적전문인' | ''>('선도적세계인');
+  const [basicTag, setBasicTag] = useState<'글쓰기' | '외국어' | 'S/W' | '인성' | ''>('글쓰기');
   const [isFormOpen, setIsFormOpen] = useState(false);
+
+  // 타입이 변경될 때 자동으로 태그 초기화
+  useEffect(() => {
+    if (type !== '심교' && type !== '지교') {
+      setAdvancedTag('');
+      setBasicTag('');
+    } else if (type === '심교') {
+      setAdvancedTag('선도적세계인');
+      setBasicTag('');
+    } else if (type === '지교') {
+      setAdvancedTag('');
+      setBasicTag('글쓰기');
+    }
+  }, [type]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,6 +42,8 @@ const AddCourseForm: React.FC<CourseFormProps> = ({ onAddCourse }) => {
         type,
         credits,
         semester,
+        ...(type === '심교' && advancedTag ? { Advanced_tag: advancedTag } : {}),
+        ...(type === '지교' && basicTag ? { Basic_tag: basicTag } : {})
       });
       setName('');
       setIsFormOpen(false);
@@ -36,7 +56,20 @@ const AddCourseForm: React.FC<CourseFormProps> = ({ onAddCourse }) => {
     '2027년 상반기', '2027년 하반기'
   ];
 
-  const courseTypes = ['기교', '심교', '지교(반교)', '전선', '일선'];
+  const courseTypes = ['기교', '심교', '지교', '전선', '일선'];
+
+  const advancedTagOptions = [
+    { value: '선도적세계인', label: '선도적세계인' },
+    { value: '실천적사회인', label: '실천적사회인' },
+    { value: '창의적전문인', label: '창의적전문인' },
+  ];
+
+  const basicTagOptions = [
+    { value: '글쓰기', label: '글쓰기' },
+    { value: '외국어', label: '외국어' },
+    { value: 'S/W', label: 'S/W' },
+    { value: '인성', label: '인성' },
+  ];
 
   if (!isFormOpen) {
     return (
@@ -129,6 +162,53 @@ const AddCourseForm: React.FC<CourseFormProps> = ({ onAddCourse }) => {
             </select>
           </div>
         </div>
+        
+        {type === '심교' && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              인재상 태그
+            </label>
+            <div className="flex flex-col space-y-2">
+              {advancedTagOptions.map((tagOption) => (
+                <label key={tagOption.value} className="inline-flex items-center">
+                  <input
+                    type="radio"
+                    name="advancedTag"
+                    value={tagOption.value}
+                    checked={advancedTag === tagOption.value}
+                    onChange={() => setAdvancedTag(tagOption.value as any)}
+                    className="text-emerald-500 focus:ring-emerald-500 h-4 w-4"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">{tagOption.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {type === '지교' && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              기초 태그
+            </label>
+            <div className="flex flex-col space-y-2">
+              {basicTagOptions.map((tagOption) => (
+                <label key={tagOption.value} className="inline-flex items-center">
+                  <input
+                    type="radio"
+                    name="basicTag"
+                    value={tagOption.value}
+                    checked={basicTag === tagOption.value}
+                    onChange={() => setBasicTag(tagOption.value as any)}
+                    className="text-emerald-500 focus:ring-emerald-500 h-4 w-4"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">{tagOption.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+        
         <div className="flex justify-end pt-2">
           <button
             type="button"
