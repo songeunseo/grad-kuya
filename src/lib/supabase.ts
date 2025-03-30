@@ -477,6 +477,26 @@ export async function getUserSettings(userId: string): Promise<UserSettings | nu
   
   try {
     console.log('Supabase에서 사용자 설정 가져오기, userId:', userId);
+    
+    // 먼저 현재 세션이 유효한지 확인
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !session) {
+      console.error('유효한 세션이 없습니다. 설정을 가져올 수 없습니다.', sessionError);
+      return null;
+    }
+    
+    console.log('유효한 세션 확인됨, 인증된 사용자:', session.user.id);
+    console.log('요청 사용자 ID:', userId);
+    
+    // RLS 정책 확인: 사용자 ID가 일치하는지 확인
+    if (session.user.id !== userId) {
+      console.warn('세션 사용자 ID와 요청 사용자 ID가 일치하지 않습니다. RLS 정책으로 인해 액세스가 거부될 수 있습니다.');
+    }
+    
+    // 테이블 접근 권한 테스트
+    console.log('user_settings 테이블 접근 시도...');
+    
+    // 사용자 설정 쿼리
     const { data, error } = await supabase
       .from('user_settings')
       .select('*')
@@ -484,7 +504,28 @@ export async function getUserSettings(userId: string): Promise<UserSettings | nu
       .single();
     
     if (error) {
+      // 테이블이 존재하지 않는 오류인 경우 (42P01)
+      if (error.code === '42P01') {
+        console.error('user_settings 테이블이 존재하지 않습니다. SQL 쿼리를 실행하여 테이블을 생성해야 합니다.');
+        return null;
+      }
+      
+      // PGRST116은 단일 레코드를 찾을 수 없음을 의미 - 오류가 아님
+      if (error.code === 'PGRST116') {
+        console.log('사용자 설정이 없습니다. 새로 생성이 필요합니다.');
+        return null;
+      }
+      
+      // 접근 제한 오류인 경우
+      if (error.code === '42501' || error.message?.includes('permission denied')) {
+        console.error('user_settings 테이블에 접근 권한이 없습니다. RLS 정책을 확인하세요.');
+      }
+      
       console.error('사용자 설정 가져오기 오류:', error);
+      if (error.details) console.error('- 오류 세부정보:', error.details);
+      if (error.hint) console.error('- 오류 힌트:', error.hint); 
+      if (error.message) console.error('- 오류 메시지:', error.message);
+      if (error.code) console.error('- 오류 코드:', error.code);
       return null;
     }
     
@@ -504,58 +545,115 @@ export async function saveUserSettings(settings: UserSettings): Promise<UserSett
   }
   
   try {
-    console.log('사용자 설정 확인 중...');
+    console.log('사용자 설정 저장 시도...', JSON.stringify(settings, null, 2));
+    console.log('각 필드 확인:');
+    console.log('- user_id:', settings.user_id);
+    console.log('- semesters:', settings.semesters);
+    console.log('- visible_types:', settings.visible_types);
+    console.log('- course_types_order:', settings.course_types_order);
+    
+    // 배열 필드가 undefined인 경우 빈 배열로 초기화 
+    // JSONB 타입으로 저장하기 위해 JSON.stringify 처리할 필요 없음
+    // Supabase가 자동으로 JavaScript 배열을 JSONB로 변환
+    const safeSettings = {
+      ...settings,
+      semesters: settings.semesters || [],
+      visible_types: settings.visible_types || [],
+      course_types_order: settings.course_types_order || []
+    };
+    
+    // 먼저 현재 세션이 유효한지 확인
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !session) {
+      console.error('유효한 세션이 없습니다. 설정을 저장할 수 없습니다.', sessionError);
+      return null;
+    }
+    
+    console.log('유효한 세션 확인됨:', session.user.id);
+    console.log('저장할 설정(안전처리 후):', JSON.stringify(safeSettings, null, 2));
+    
     // 기존 설정이 있는지 확인
     const { data: existingData, error: checkError } = await supabase
       .from('user_settings')
       .select('id')
-      .eq('user_id', settings.user_id)
+      .eq('user_id', safeSettings.user_id)
       .maybeSingle();
     
-    if (checkError && checkError.code !== 'PGRST116') {
-      console.error('설정 확인 오류:', checkError);
-      return null;
+    console.log('기존 설정 확인 결과:', existingData, checkError);
+    
+    if (checkError) {
+      // 테이블이 존재하지 않는 오류인 경우 (42P01)
+      if (checkError.code === '42P01') {
+        console.error('테이블이 존재하지 않습니다. SQL 쿼리를 실행하여 테이블을 생성해야 합니다.');
+        return null;
+      }
+      // PGRST116이 아닌 다른 오류인 경우
+      if (checkError.code !== 'PGRST116') {
+        console.error('설정 확인 오류:', checkError);
+        return null;
+      }
     }
     
     let result;
     
     if (existingData?.id) {
       // 기존 설정 업데이트
-      console.log('기존 설정 업데이트:', settings);
+      console.log('기존 설정 업데이트 시도:', existingData.id);
+      const updatePayload = {
+        semesters: safeSettings.semesters,
+        visible_types: safeSettings.visible_types,
+        course_types_order: safeSettings.course_types_order,
+        updated_at: new Date().toISOString()
+      };
+      console.log('업데이트 페이로드:', JSON.stringify(updatePayload, null, 2));
+      
       const { data, error } = await supabase
         .from('user_settings')
-        .update({
-          semesters: settings.semesters,
-          visible_types: settings.visible_types,
-          course_types_order: settings.course_types_order,
-          updated_at: new Date().toISOString()
-        })
+        .update(updatePayload)
         .eq('id', existingData.id)
         .select()
         .single();
       
+      console.log('업데이트 결과:', data, error);
+      
       if (error) {
         console.error('설정 업데이트 오류:', error);
+        if (error.details) console.error('- 오류 세부정보:', error.details);
+        if (error.hint) console.error('- 오류 힌트:', error.hint);
+        if (error.message) console.error('- 오류 메시지:', error.message);
+        if (error.code) console.error('- 오류 코드:', error.code);
         return null;
       }
       
       result = data;
     } else {
       // 새 설정 생성
-      console.log('새 설정 생성:', settings);
+      console.log('새 설정 생성 시도');
+      const insertData = {
+        user_id: safeSettings.user_id,
+        semesters: safeSettings.semesters,
+        visible_types: safeSettings.visible_types,
+        course_types_order: safeSettings.course_types_order
+      };
+      console.log('삽입할 데이터:', JSON.stringify(insertData, null, 2));
+      
       const { data, error } = await supabase
         .from('user_settings')
-        .insert([{
-          user_id: settings.user_id,
-          semesters: settings.semesters,
-          visible_types: settings.visible_types,
-          course_types_order: settings.course_types_order
-        }])
+        .insert([insertData])
         .select()
         .single();
       
+      console.log('삽입 결과:', data, error);
+      
       if (error) {
         console.error('설정 생성 오류:', error);
+        
+        // 세부 오류 정보 출력
+        if (error.details) console.error('- 오류 세부정보:', error.details);
+        if (error.hint) console.error('- 오류 힌트:', error.hint);
+        if (error.message) console.error('- 오류 메시지:', error.message);
+        if (error.code) console.error('- 오류 코드:', error.code);
+        
         return null;
       }
       
@@ -565,7 +663,102 @@ export async function saveUserSettings(settings: UserSettings): Promise<UserSett
     console.log('설정 저장 성공:', result);
     return result;
   } catch (err) {
-    console.error('설정 저장 예외:', err);
+    console.error('설정 저장 중 예외 발생:', err);
     return null;
+  }
+}
+
+// RLS 정책 테스트 - 테이블 권한 확인
+export async function testTablePermissions() {
+  if (!supabaseEnabled) {
+    console.error('Supabase가 활성화되지 않아 테이블 권한을 확인할 수 없습니다.');
+    return { success: false, message: 'Supabase 비활성화' };
+  }
+
+  try {
+    // 현재 인증 상태 확인
+    const { data: authData, error: authError } = await supabase.auth.getSession();
+    
+    if (authError) {
+      console.error('인증 세션 확인 오류:', authError);
+      return { success: false, message: '인증 오류', error: authError };
+    }
+    
+    if (!authData.session?.user?.id) {
+      console.log('인증된 사용자 없음 (로그인 필요)');
+      return { success: false, message: '로그인 필요' };
+    }
+    
+    const userId = authData.session.user.id;
+    console.log('인증된 사용자 ID:', userId);
+    
+    // courses 테이블 접근 테스트
+    console.log('courses 테이블 접근 테스트...');
+    const { data: coursesData, error: coursesError } = await supabase
+      .from('courses')
+      .select('count')
+      .limit(1);
+    
+    if (coursesError) {
+      console.error('courses 테이블 접근 오류:', coursesError);
+    } else {
+      console.log('courses 테이블 접근 성공');
+    }
+    
+    // user_settings 테이블 접근 테스트
+    console.log('user_settings 테이블 접근 테스트...');
+    const { data: settingsData, error: settingsError } = await supabase
+      .from('user_settings')
+      .select('count')
+      .limit(1);
+    
+    if (settingsError) {
+      console.error('user_settings 테이블 접근 오류:', settingsError);
+      
+      // 테이블이 존재하지 않는 오류인 경우
+      if (settingsError.code === '42P01') {
+        return { 
+          success: false, 
+          message: 'user_settings 테이블이 존재하지 않습니다',
+          userId 
+        };
+      }
+      
+      return { 
+        success: false, 
+        message: 'user_settings 테이블 접근 오류', 
+        error: settingsError,
+        userId 
+      };
+    }
+    
+    console.log('user_settings 테이블 접근 성공');
+    
+    // user_settings 테이블에 기존 설정이 있는지 확인
+    const { data: existingSettings, error: existingError } = await supabase
+      .from('user_settings')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
+    
+    if (existingError && existingError.code !== 'PGRST116') {
+      console.error('기존 설정 확인 오류:', existingError);
+      return { 
+        success: false, 
+        message: '기존 설정 확인 오류', 
+        error: existingError,
+        userId 
+      };
+    }
+    
+    return { 
+      success: true, 
+      message: '모든 테이블 접근 성공', 
+      hasExistingSettings: !!existingSettings?.id,
+      userId
+    };
+  } catch (err) {
+    console.error('테이블 권한 확인 중 예외 발생:', err);
+    return { success: false, message: '예외 발생', error: err };
   }
 } 
