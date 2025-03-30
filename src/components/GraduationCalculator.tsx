@@ -18,8 +18,12 @@ const GraduationCalculator: React.FC<GraduationCalculatorProps> = ({ courses }) 
     { name: '심교', required: 15 },
     { name: '지교', required: 18 },
     { name: '지필', required: 2 },
-    { name: '전선', required: 72 },
+    { name: '전필', required: 46 },
+    { name: '전선', required: 26 },
+    { name: '전기', required: 0 },
     { name: '일선', required: 13 },
+    { name: '교직', required: 0 },
+    { name: '반교', required: 0 },
   ];
 
   // 학기 목록: 연도-학기 형식으로 변환 (예: 2025년 상반기 -> 2025-1학기)

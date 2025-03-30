@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react'
 import CourseTable from './components/CourseTable'
 import GraduationCalculator from './components/GraduationCalculator'
 import Auth from './components/Auth'
-import { migrateLocalStorageToDB, Course } from './lib/supabase'
+import { migrateLocalStorageToDB, Course, checkTablesExist, directAddSampleCourse } from './lib/supabase'
 import logo from './assets/logo.svg'
+import { supabase } from './lib/supabase'
 
 function App() {
   const [userId, setUserId] = useState<string | null>(null);
@@ -17,14 +18,35 @@ function App() {
       setUserId(storedUserId);
     }
     setLoading(false);
+
+    // 테이블 존재 여부 확인
+    const verifySupabase = async () => {
+      const exists = await checkTablesExist();
+      console.log('Supabase 테이블 확인 결과:', exists);
+    };
+
+    verifySupabase();
   }, []);
 
   const handleLogin = async (userId: string) => {
+    console.log('로그인 처리, 사용자 ID:', userId);
     setUserId(userId);
     localStorage.setItem('userId', userId);
     
+    // 인증 상태 확인
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log('로그인 후 세션 정보:', session);
+    
     // Migrate localStorage data to Supabase if needed
     await migrateLocalStorageToDB(userId);
+    
+    // 테스트용 샘플 과목 추가 시도
+    try {
+      const result = await directAddSampleCourse(userId);
+      console.log('샘플 과목 추가 결과:', result);
+    } catch (error) {
+      console.error('샘플 과목 추가 실패:', error);
+    }
   };
 
   const handleLogout = () => {

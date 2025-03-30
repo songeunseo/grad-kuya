@@ -50,17 +50,10 @@ const AddCourseForm: React.FC<CourseFormProps> = ({ onAddCourse, semesters = [] 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim()) {
-      console.log('Adding course:', {
-        name,
-        type,
-        credits,
-        semester,
-        ...(type === '심교' && advancedTag ? { Advanced_tag: advancedTag } : {}),
-        ...(type === '기교' && basicTag ? { Basic_tag: basicTag } : {}),
-        ...(type === '지교' && basicTag ? { Basic_tag: basicTag } : {})
-      });
+      console.log('폼 제출됨 - 과목 추가 시도:', name);
       
-      onAddCourse({
+      // 추가할 과목 데이터 구성
+      const courseData = {
         name,
         type,
         credits,
@@ -68,7 +61,11 @@ const AddCourseForm: React.FC<CourseFormProps> = ({ onAddCourse, semesters = [] 
         ...(type === '심교' && advancedTag ? { Advanced_tag: advancedTag } : {}),
         ...(type === '기교' && basicTag ? { Basic_tag: basicTag } : {}),
         ...(type === '지교' && basicTag ? { Basic_tag: basicTag } : {})
-      });
+      };
+      
+      console.log('onAddCourse 호출 전 과목 데이터:', courseData);
+      onAddCourse(courseData);
+      console.log('onAddCourse 호출 완료');
       
       // 폼 초기화
       setName('');
@@ -76,6 +73,8 @@ const AddCourseForm: React.FC<CourseFormProps> = ({ onAddCourse, semesters = [] 
       setCredits(3);
       // 모달 닫기
       setIsModalOpen(false);
+    } else {
+      console.warn('과목 이름이 비어있어 추가되지 않았습니다.');
     }
   };
 
@@ -92,7 +91,7 @@ const AddCourseForm: React.FC<CourseFormProps> = ({ onAddCourse, semesters = [] 
     }
   };
 
-  const courseTypes = ['기교', '심교', '지교', '전선', '일선'];
+  const courseTypes = ['기교', '심교', '지교', '지필', '전필', '전선', '전기', '일선', '교직', '반교'];
 
   const advancedTagOptions = [
     { value: '선도적세계인', label: '선도적세계인' },

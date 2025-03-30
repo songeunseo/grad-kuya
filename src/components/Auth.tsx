@@ -15,9 +15,19 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   useEffect(() => {
     // Check if user is already logged in
     const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      console.log('인증 상태 확인 중...');
+      const { data: { user }, error } = await supabase.auth.getUser();
+      
+      if (error) {
+        console.error('인증 상태 확인 오류:', error);
+        return;
+      }
+      
       if (user) {
+        console.log('이미 로그인된 사용자 발견:', user.id);
         onLogin(user.id);
+      } else {
+        console.log('로그인된 사용자 없음');
       }
     };
     checkUser();
@@ -31,16 +41,19 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     try {
       if (isSignUp) {
         // Sign up
+        console.log('회원가입 시도:', email);
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
         });
 
         if (error) throw error;
-
+        
+        console.log('회원가입 결과:', data);
         setMessage('회원가입이 완료되었습니다. 이메일을 확인해주세요.');
       } else {
         // Sign in
+        console.log('로그인 시도:', email);
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -48,11 +61,17 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
         if (error) throw error;
         
+        console.log('로그인 결과:', data);
         if (data.user) {
+          console.log('로그인 성공! 사용자 ID:', data.user.id);
           onLogin(data.user.id);
+        } else {
+          console.error('로그인 실패: user 객체 없음');
+          setMessage('로그인 처리 중 오류가 발생했습니다.');
         }
       }
     } catch (error: any) {
+      console.error('인증 처리 중 오류:', error);
       setMessage(error.message || '오류가 발생했습니다.');
     } finally {
       setLoading(false);

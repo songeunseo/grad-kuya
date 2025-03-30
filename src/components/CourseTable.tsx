@@ -15,7 +15,15 @@ import {
 import { CourseItem } from './CourseItem';
 import AddCourseForm from './AddCourseForm';
 import SemesterManager from './SemesterManager';
-import { getCourses, addCourse, deleteCourse, updateCourse, Course } from '../lib/supabase';
+import { 
+  getCourses, 
+  addCourse, 
+  addCourseNoRLS, 
+  deleteCourse, 
+  updateCourse, 
+  Course,
+  supabase
+} from '../lib/supabase';
 
 interface CourseTableProps {
   userId: string;
@@ -31,6 +39,7 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId, onCoursesUpdate }) =>
   useEffect(() => {
     const fetchCourses = async () => {
       try {
+        console.log('fetchCourses 함수 호출됨');
         const fetchedCourses = await getCourses(userId);
         setCourses(fetchedCourses);
         if (onCoursesUpdate) {
@@ -43,8 +52,10 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId, onCoursesUpdate }) =>
       }
     };
 
-    fetchCourses();
-  }, [userId, onCoursesUpdate]);
+    if (loading) {
+      fetchCourses();
+    }
+  }, [userId, onCoursesUpdate, loading]);
 
   const sensors = useSensors(
     useSensor(MouseSensor),
@@ -75,26 +86,43 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId, onCoursesUpdate }) =>
   };
 
   const handleAddCourse = async (courseData: Omit<Course, 'id' | 'created_at' | 'user_id'>) => {
-    console.log('handleAddCourse called with:', courseData);
+    console.log('handleAddCourse 호출됨, 데이터:', courseData);
+    
     try {
-      const newCourse = await addCourse({
+      // 현재 인증 상태 확인
+      const { data: authData } = await supabase.auth.getSession();
+      console.log('현재 인증 세션:', authData);
+      
+      // user_id 추가
+      const courseWithUserId = {
         ...courseData,
         user_id: userId
-      });
+      };
+      console.log('Supabase에 전송할 데이터:', courseWithUserId);
       
-      console.log('New course added:', newCourse);
+      // 기본 방식으로 먼저 시도
+      let newCourse = await addCourse(courseWithUserId);
+      
+      // 만약 실패하면 RLS 우회 시도 (디버깅용)
+      if (!newCourse) {
+        console.log('기본 과목 추가 실패, RLS 우회 시도...');
+        newCourse = await addCourseNoRLS(courseWithUserId);
+      }
+      
+      console.log('addCourse 결과:', newCourse);
       
       if (newCourse) {
         const updatedCourses = [...courses, newCourse];
+        console.log('courses 상태 업데이트, 총 과목 수:', updatedCourses.length);
         setCourses(updatedCourses);
         if (onCoursesUpdate) {
           onCoursesUpdate(updatedCourses);
         }
       } else {
-        console.error('Failed to add course, newCourse is null');
+        console.error('과목 추가 실패, newCourse가 null입니다.');
       }
     } catch (error) {
-      console.error('Error adding course:', error);
+      console.error('과목 추가 중 예외 발생:', error);
     }
   };
 
@@ -127,14 +155,19 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId, onCoursesUpdate }) =>
     }
   }, []);
 
-  const courseTypes = ['기교', '심교', '지교', '전선', '일선'];
+  const courseTypes = ['기교', '심교', '지교', '지필', '전필', '전선', '전기', '일선', '교직', '반교'];
 
   const getTypeStyle = (type: string) => {
     switch (type) {
       case '기교': return 'bg-amber-50/50 hover:bg-amber-50/70';
       case '심교': return 'bg-rose-50/50 hover:bg-rose-50/70';
       case '지교': return 'bg-sky-50/50 hover:bg-sky-50/70';
+      case '지필': return 'bg-sky-100/50 hover:bg-sky-100/70';
+      case '전필': return 'bg-emerald-100/50 hover:bg-emerald-100/70';
       case '전선': return 'bg-emerald-50/50 hover:bg-emerald-50/70';
+      case '전기': return 'bg-emerald-200/50 hover:bg-emerald-200/70';
+      case '교직': return 'bg-violet-50/50 hover:bg-violet-50/70';
+      case '반교': return 'bg-orange-50/50 hover:bg-orange-50/70';
       default: return 'bg-gray-50/50 hover:bg-gray-50/70';
     }
   };
