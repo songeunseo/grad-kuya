@@ -3,16 +3,32 @@ import { Course } from '../lib/supabase';
 
 interface CourseFormProps {
   onAddCourse: (course: Omit<Course, 'id' | 'created_at' | 'user_id'>) => void;
+  semesters?: string[];
 }
 
-const AddCourseForm: React.FC<CourseFormProps> = ({ onAddCourse }) => {
+const AddCourseForm: React.FC<CourseFormProps> = ({ onAddCourse, semesters = [] }) => {
   const [name, setName] = useState('');
   const [type, setType] = useState('기교');
   const [credits, setCredits] = useState(3);
-  const [semester, setSemester] = useState('2024년 상반기');
+  const [semester, setSemester] = useState('');
   const [advancedTag, setAdvancedTag] = useState<'선도적세계인' | '실천적사회인' | '창의적전문인' | ''>('선도적세계인');
   const [basicTag, setBasicTag] = useState<'글쓰기' | '외국어' | 'S/W' | '인성' | ''>('글쓰기');
   const [isFormOpen, setIsFormOpen] = useState(false);
+
+  // 기본 학기 목록 (semesters prop이 비어있을 경우 사용)
+  const defaultSemesters = [
+    '2025년 상반기', '2025년 하반기'
+  ];
+
+  // 실제 사용할 학기 목록
+  const availableSemesters = semesters.length > 0 ? semesters : defaultSemesters;
+
+  // 컴포넌트 마운트 시 기본 학기 설정
+  useEffect(() => {
+    if (availableSemesters.length > 0 && !semester) {
+      setSemester(availableSemesters[0]);
+    }
+  }, [availableSemesters, semester]);
 
   // 타입이 변경될 때 자동으로 태그 초기화
   useEffect(() => {
@@ -43,12 +59,6 @@ const AddCourseForm: React.FC<CourseFormProps> = ({ onAddCourse }) => {
       setIsFormOpen(false);
     }
   };
-
-  const semesters = [
-    '2023년 상반기', '2023년 하반기', '2024년 상반기', '2024년 하반기',
-    '2025년 상반기', '2025년 하반기', '2026년 상반기', '2026년 하반기',
-    '2027년 상반기', '2027년 하반기'
-  ];
 
   const courseTypes = ['기교', '심교', '지교', '전선', '일선'];
 
@@ -148,7 +158,7 @@ const AddCourseForm: React.FC<CourseFormProps> = ({ onAddCourse }) => {
               onChange={(e) => setSemester(e.target.value)}
               className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
             >
-              {semesters.map((sem) => (
+              {availableSemesters.map((sem) => (
                 <option key={sem} value={sem}>
                   {sem}
                 </option>

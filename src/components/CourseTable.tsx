@@ -14,6 +14,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CourseItem } from './CourseItem';
 import AddCourseForm from './AddCourseForm';
+import SemesterManager from './SemesterManager';
 import { getCourses, addCourse, deleteCourse, updateCourse, Course } from '../lib/supabase';
 
 interface CourseTableProps {
@@ -23,6 +24,7 @@ interface CourseTableProps {
 const CourseTable: React.FC<CourseTableProps> = ({ userId }) => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [semesters, setSemesters] = useState<string[]>(['2025년 상반기', '2025년 하반기']);
 
   // Fetch courses from Supabase
   useEffect(() => {
@@ -86,11 +88,19 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId }) => {
     }
   };
 
-  const semesters = [
-    '2023년 상반기', '2023년 하반기', '2024년 상반기', '2024년 하반기',
-    '2025년 상반기', '2025년 하반기', '2026년 상반기', '2026년 하반기',
-    '2027년 상반기', '2027년 하반기'
-  ];
+  const handleSemestersChange = (updatedSemesters: string[]) => {
+    setSemesters(updatedSemesters);
+    // localStorage에 학기 목록 저장
+    localStorage.setItem('semesters', JSON.stringify(updatedSemesters));
+  };
+
+  // localStorage에서 학기 정보 불러오기
+  useEffect(() => {
+    const savedSemesters = localStorage.getItem('semesters');
+    if (savedSemesters) {
+      setSemesters(JSON.parse(savedSemesters));
+    }
+  }, []);
 
   const courseTypes = ['기교', '심교', '지교', '전선', '일선'];
 
@@ -106,7 +116,13 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId }) => {
 
   return (
     <div className="space-y-6">
-      <AddCourseForm onAddCourse={handleAddCourse} />
+      <div className="flex gap-4 mb-4">
+        <AddCourseForm onAddCourse={handleAddCourse} semesters={semesters} />
+        <SemesterManager 
+          semesters={semesters}
+          onSemestersChange={handleSemestersChange}
+        />
+      </div>
       
       {loading ? (
         <div className="w-full p-10 text-center">
