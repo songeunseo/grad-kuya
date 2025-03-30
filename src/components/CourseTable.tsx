@@ -15,6 +15,7 @@ import {
 import { CourseItem } from './CourseItem';
 import AddCourseForm from './AddCourseForm';
 import SemesterManager from './SemesterManager';
+import CourseTypeManager from './CourseTypeManager';
 import { 
   getCourses, 
   addCourse, 
@@ -34,6 +35,8 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId, onCoursesUpdate }) =>
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [semesters, setSemesters] = useState<string[]>(['2025년 상반기', '2025년 하반기']);
+  const [visibleTypes, setVisibleTypes] = useState<string[]>(['기교', '심교', '지교', '지필', '전필', '전선', '전기', '일선', '교직', '반교']);
+  const [courseTypes, setCourseTypes] = useState<string[]>(['기교', '심교', '지교', '지필', '전필', '전선', '전기', '일선', '교직', '반교']);
 
   // Fetch courses from Supabase
   useEffect(() => {
@@ -155,7 +158,64 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId, onCoursesUpdate }) =>
     }
   }, []);
 
-  const courseTypes = ['기교', '심교', '지교', '지필', '전필', '전선', '전기', '일선', '교직', '반교'];
+  const handleVisibleTypesChange = (types: string[]) => {
+    setVisibleTypes(types);
+    // localStorage에 이수구분 표시 정보 저장
+    localStorage.setItem('visibleTypes', JSON.stringify(types));
+    
+    // localStorage에서 최신 순서를 다시 불러와 적용
+    try {
+      const savedOrder = localStorage.getItem('courseTypesOrder');
+      if (savedOrder) {
+        const parsedOrder = JSON.parse(savedOrder);
+        // 새로운 타입이 있으면 기존 순서 유지하면서 누락된 것만 추가
+        let newOrder = [...parsedOrder];
+        courseTypes.forEach(type => {
+          if (!newOrder.includes(type)) {
+            newOrder.push(type);
+          }
+        });
+        // 존재하지 않는 타입은 제거
+        newOrder = newOrder.filter(type => courseTypes.includes(type));
+        
+        setCourseTypes(newOrder);
+      }
+    } catch (e) {
+      console.error('Error applying saved course types order:', e);
+    }
+  };
+
+  // localStorage에서 이수구분 표시 정보 불러오기
+  useEffect(() => {
+    const savedVisibleTypes = localStorage.getItem('visibleTypes');
+    if (savedVisibleTypes) {
+      setVisibleTypes(JSON.parse(savedVisibleTypes));
+    }
+  }, []);
+
+  // 이수구분 순서 관리
+  useEffect(() => {
+    // localStorage에서 저장된 순서가 있으면 불러오기
+    const savedOrder = localStorage.getItem('courseTypesOrder');
+    if (savedOrder) {
+      try {
+        const parsedOrder = JSON.parse(savedOrder);
+        // 새로운 타입이 있으면 기존 순서 유지하면서 누락된 것만 추가
+        let newOrder = [...parsedOrder];
+        courseTypes.forEach(type => {
+          if (!newOrder.includes(type)) {
+            newOrder.push(type);
+          }
+        });
+        // 존재하지 않는 타입은 제거
+        newOrder = newOrder.filter(type => courseTypes.includes(type));
+        
+        setCourseTypes(newOrder);
+      } catch (e) {
+        console.error('Error parsing saved course types order:', e);
+      }
+    }
+  }, []);
 
   const getTypeStyle = (type: string) => {
     switch (type) {
@@ -166,6 +226,7 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId, onCoursesUpdate }) =>
       case '전필': return 'bg-emerald-100/50 hover:bg-emerald-100/70';
       case '전선': return 'bg-emerald-50/50 hover:bg-emerald-50/70';
       case '전기': return 'bg-emerald-200/50 hover:bg-emerald-200/70';
+      case '일선': return 'bg-gray-50/50 hover:bg-gray-50/70';
       case '교직': return 'bg-violet-50/50 hover:bg-violet-50/70';
       case '반교': return 'bg-orange-50/50 hover:bg-orange-50/70';
       default: return 'bg-gray-50/50 hover:bg-gray-50/70';
@@ -174,11 +235,16 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId, onCoursesUpdate }) =>
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-4 mb-4">
+      <div className="flex flex-wrap gap-4 mb-4">
         <AddCourseForm onAddCourse={handleAddCourse} semesters={semesters} />
         <SemesterManager 
           semesters={semesters}
           onSemestersChange={handleSemestersChange}
+        />
+        <CourseTypeManager
+          allTypes={courseTypes}
+          visibleTypes={visibleTypes}
+          onVisibleTypesChange={handleVisibleTypesChange}
         />
       </div>
       
@@ -206,7 +272,7 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId, onCoursesUpdate }) =>
                 </tr>
               </thead>
               <tbody>
-                {courseTypes.map((type, index) => (
+                {courseTypes.filter(type => visibleTypes.includes(type)).map((type, index) => (
                   <tr key={index}>
                     <td className={`
                       sticky 
