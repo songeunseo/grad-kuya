@@ -6,16 +6,24 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Supabase 클라이언트 생성 또는 로컬 스토리지 폴백 준비
 let supabaseEnabled = false;
+
+console.log('Supabase 초기화 시작...');
+console.log('Supabase URL 존재 여부:', !!supabaseUrl);
+console.log('Supabase Anon Key 존재 여부:', !!supabaseAnonKey);
+
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Supabase 환경 변수가 없습니다. 로컬 스토리지 모드로 작동합니다.');
 } else {
-  console.log('Supabase URL:', supabaseUrl.substring(0, 10) + '...');
+  console.log('Supabase URL:', supabaseUrl);
+  console.log('Supabase 클라이언트 생성 중...');
   supabaseEnabled = true;
 }
 
 export const supabase = supabaseEnabled ? 
   createClient(supabaseUrl, supabaseAnonKey) : 
   createClient('https://placeholder.supabase.co', 'placeholder');
+
+console.log('Supabase 클라이언트 초기화 완료, 활성화 상태:', supabaseEnabled);
 
 // 모델 정의
 export interface Course {
