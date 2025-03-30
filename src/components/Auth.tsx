@@ -159,7 +159,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
             graduation_semester: graduationSemester
           },
           // 이메일 인증 요청
-          emailRedirectTo: window.location.origin
+          emailRedirectTo: `${window.location.protocol}//${window.location.host}`
         }
       });
       

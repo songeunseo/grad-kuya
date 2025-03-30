@@ -494,6 +494,25 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId, onCoursesUpdate }) =>
     }
   };
 
+  // 년도와 학기 정보를 학년 학기 형식으로 변환
+  const semesterToGradeFormat = (semester: string) => {
+    if (semester.includes('계절학기')) return null;
+    
+    // 순서대로 학년-학기 계산
+    const index = semesters
+      .filter(sem => !sem.includes('계절학기'))
+      .findIndex(sem => sem === semester);
+    
+    if (index === -1) return null;
+    
+    // 0, 1 -> 1학년 1학기, 1학년 2학기
+    // 2, 3 -> 2학년 1학기, 2학년 2학기
+    const grade = Math.floor(index / 2) + 1;
+    const semNumber = (index % 2) + 1;
+    
+    return `${grade}학년 ${semNumber}학기`;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap gap-4 mb-4">
@@ -531,7 +550,12 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId, onCoursesUpdate }) =>
                       key={index} 
                       className="border-b-2 border-gray-200 p-3 text-sm font-semibold text-gray-600 min-w-[180px]"
                     >
-                      {semester}
+                      <div>{semester}</div>
+                      {!semester.includes('계절학기') && (
+                        <div className="text-xs mt-1 font-normal text-gray-600">
+                          {semesterToGradeFormat(semester)}
+                        </div>
+                      )}
                     </th>
                   ))}
                 </tr>
