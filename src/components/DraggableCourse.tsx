@@ -7,9 +7,10 @@ interface CourseProps {
   name: string;
   type: string;
   credits: number;
+  tag?: '선도적세계인' | '실천적사회인' | '창의적전문인';
 }
 
-export const DraggableCourse: React.FC<CourseProps> = ({ id, name, type, credits }) => {
+export const DraggableCourse: React.FC<CourseProps> = ({ id, name, type, credits, tag }) => {
   const {
     attributes,
     listeners,
@@ -52,8 +53,17 @@ export const DraggableCourse: React.FC<CourseProps> = ({ id, name, type, credits
         duration-200
       `}
     >
-      <div className="text-sm font-semibold text-gray-800">{name}</div>
-      <div className="text-xs mt-1 text-gray-600 flex justify-end">
+      <div className="text-sm font-semibold text-gray-800">
+        {name}
+      </div>
+      <div className="text-xs mt-1 text-gray-600 flex justify-between">
+        {type === '심교' && tag ? (
+          <span className="bg-white px-2 py-0.5 rounded-full text-gray-600 text-[10px] font-medium border border-gray-200">
+            {tag}
+          </span>
+        ) : (
+          <span></span>  
+        )}
         <span className="bg-white px-2 py-0.5 rounded-full text-gray-600 text-[10px] font-bold">
           {credits}학점
         </span>
