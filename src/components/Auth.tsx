@@ -82,9 +82,6 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
         return false;
       }
       
-      // 이메일 중복 확인은 항상 통과
-      setEmailChecked(true);
-      
       // 비밀번호 검사
       if (password !== confirmPassword) {
         setMessage('비밀번호와 비밀번호 확인이 일치하지 않습니다.');
@@ -148,45 +145,6 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     setMessage(''); // 기존 메시지 초기화
     
     try {
-      // 이메일이 이미 존재하는지 먼저 확인
-      console.log('이메일 중복 검사 시도');
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password: 'dummy_password_for_check_' + Date.now()
-      });
-      
-      // 로그인 오류 메시지 확인 - "Invalid login credentials"는 사용자가 존재한다는 의미
-      if (signInError) {
-        console.log('로그인 시도 오류:', signInError.message);
-        
-        if (signInError.message.includes('Invalid login credentials')) {
-          // 이미 이메일이 등록되어 있음
-          console.log('이미 등록된 이메일 감지');
-          setEmailChecked(false);
-          setIsEmailTaken(true);
-          setMessage('이미 사용 중인 이메일입니다. 다른 이메일을 사용하거나 로그인해주세요.');
-          setLoading(false);
-          // alert로 명확하게 표시 (테스트용)
-          alert('이미 사용 중인 이메일입니다. 다른 이메일을 사용하거나 로그인해주세요.');
-          return;
-        }
-        
-        // "User not found" 오류는 이메일이 존재하지 않는다는 의미 - 회원가입 진행 가능
-        if (!signInError.message.toLowerCase().includes('user not found')) {
-          console.log('예상치 못한 오류:', signInError.message);
-        }
-      } else {
-        // 로그인이 성공했다면 이미 계정이 있는 것 (극히 드문 경우)
-        console.log('이미 등록된 이메일 감지 (로그인 성공)');
-        setEmailChecked(false);
-        setIsEmailTaken(true);
-        setMessage('이미 사용 중인 이메일입니다. 로그인해주세요.');
-        setLoading(false);
-        // alert로 명확하게 표시 (테스트용)
-        alert('이미 사용 중인 이메일입니다. 로그인해주세요.');
-        return;
-      }
-      
       // 계속해서 회원가입 처리
       console.log('Supabase 회원가입 요청 시작');
       const { data, error } = await supabase.auth.signUp({
@@ -208,23 +166,6 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
       console.log('회원가입 요청 결과:', error ? `오류: ${error.message}` : '성공');
       
       if (error) {
-        // 오류 메시지 확인해서 이메일 중복인 경우 처리
-        const errorMsg = error.message.toLowerCase();
-        console.log('오류 메시지:', errorMsg);
-        
-        if (errorMsg.includes('already registered') || 
-            errorMsg.includes('already in use') || 
-            errorMsg.includes('already exists') ||
-            errorMsg.includes('user already registered')) {
-          console.log('이미 사용 중인 이메일 확인됨');
-          setEmailChecked(false);
-          setIsEmailTaken(true);
-          setMessage('이미 사용 중인 이메일입니다.');
-          // alert로 명확하게 표시 (테스트용)
-          alert('이미 사용 중인 이메일입니다.');
-          setLoading(false);
-          return;
-        }
         throw error;
       }
       
@@ -236,8 +177,6 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     } catch (error: any) {
       console.error('회원가입 오류:', error);
       setMessage(error.message || '회원가입 중 오류가 발생했습니다.');
-      // alert로 명확하게 표시 (테스트용)
-      alert(error.message || '회원가입 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
