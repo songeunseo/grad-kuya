@@ -6,6 +6,7 @@ import {
   TouchSensor,
   useSensor,
   useSensors,
+  useDroppable,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -25,6 +26,64 @@ import {
   Course,
   supabase
 } from '../lib/supabase';
+
+// 드롭 영역 컴포넌트
+const DroppableCell = ({ 
+  children, 
+  semester, 
+  type, 
+  style 
+}: { 
+  children: React.ReactNode, 
+  semester: string, 
+  type: string, 
+  style: string 
+}) => {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `cell-${semester}-${type}`,
+    data: {
+      cellInfo: { semester, type }
+    }
+  });
+
+  const getHighlightStyle = (type: string) => {
+    switch (type) {
+      case '기교': return 'bg-amber-100/70';
+      case '심교': return 'bg-rose-100/70';
+      case '지교': return 'bg-sky-100/70';
+      case '지필': return 'bg-sky-200/70';
+      case '전필': return 'bg-emerald-100/70';
+      case '전선': return 'bg-emerald-50/80';
+      case '전기': return 'bg-emerald-50/80';
+      case '일선': return 'bg-gray-100/70';
+      case '교직': return 'bg-violet-100/70';
+      case '반교': return 'bg-orange-100/70';
+      default: return 'bg-gray-100/70';
+    }
+  };
+
+  const highlightStyle = getHighlightStyle(type);
+
+  return (
+    <td 
+      ref={setNodeRef}
+      className={`
+        ${style}
+        ${isOver ? highlightStyle : ''}
+        p-3 
+        border-b 
+        border-gray-100
+        transition-all 
+        duration-200
+        min-h-[120px]
+        align-top
+        ${isOver ? 'shadow-inner scale-[1.01]' : ''}
+      `}
+    >
+      {children}
+    </td>
+  );
+};
 
 interface CourseTableProps {
   userId: string;
@@ -61,30 +120,89 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId, onCoursesUpdate }) =>
   }, [userId, onCoursesUpdate, loading]);
 
   const sensors = useSensors(
-    useSensor(MouseSensor),
-    useSensor(TouchSensor)
+    useSensor(MouseSensor, {
+      // 마우스로 드래그 시작 설정 - 최소한의 이동 거리 필요
+      activationConstraint: {
+        distance: 5, // 5px 이상 움직여야 드래그 시작
+      }
+    }),
+    useSensor(TouchSensor, {
+      // 터치 디바이스에서 드래그 시작 설정 - 최소한의 이동 거리 필요
+      activationConstraint: {
+        delay: 100, // 터치 후 100ms 대기
+        tolerance: 5, // 5px 이상 움직여야 드래그 시작
+      }
+    })
   );
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     
-    if (over && active.id !== over.id) {
-      let updatedCourses: Course[] = [];
+    // 드롭 위치가 없으면 종료
+    if (!over) return;
+    
+    // 드래그한 과목의 ID
+    const courseId = active.id as string;
+    
+    // 지금의 구현에서 over.id는 드롭 위치의 과목 ID가 될 수 있음
+    // 테이블 셀 드롭 데이터 형식: 'cell-semester-type'
+    // 그래서 대상 셀의 정보를 정확히 알기 위해 data-cell 속성을 사용
+    const targetCell = over.data.current?.cellInfo;
+    
+    if (targetCell) {
+      // targetCell 형식: { semester: '2025년 상반기', type: '기교' }
+      const { semester, type } = targetCell;
       
-      setCourses((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
-        
-        updatedCourses = arrayMove(items, oldIndex, newIndex);
-        return updatedCourses;
-      });
+      // 현재 과목 정보 찾기
+      const courseToMove = courses.find(course => course.id === courseId);
+      if (!courseToMove) return;
       
-      // 상위 컴포넌트에 변경 알림
-      if (onCoursesUpdate) {
-        onCoursesUpdate(updatedCourses);
+      // 학기나 이수구분이 변경됐는지 확인
+      if (courseToMove.semester === semester && courseToMove.type === type) {
+        // 같은 셀 내에서의 순서 변경만 처리 (기존 로직)
+        if (active.id !== over.id) {
+          setCourses((items) => {
+            const oldIndex = items.findIndex((item) => item.id === active.id);
+            const newIndex = items.findIndex((item) => item.id === over.id);
+            
+            const updatedCourses = arrayMove(items, oldIndex, newIndex);
+            
+            // 상위 컴포넌트에 변경 알림
+            if (onCoursesUpdate) {
+              onCoursesUpdate(updatedCourses);
+            }
+            
+            return updatedCourses;
+          });
+        }
+      } else {
+        // 다른 셀로 이동하는 경우 (학기 또는 이수구분 변경)
+        try {
+          // 과목 정보 업데이트
+          const updatedCourse = {
+            ...courseToMove,
+            semester,
+            type
+          };
+          
+          // Supabase 업데이트
+          const result = await updateCourse(updatedCourse);
+          if (result) {
+            // 로컬 상태 업데이트
+            const updatedCourses = courses.map(course => 
+              course.id === courseId ? updatedCourse : course
+            );
+            setCourses(updatedCourses);
+            
+            // 상위 컴포넌트에 변경 알림
+            if (onCoursesUpdate) {
+              onCoursesUpdate(updatedCourses);
+            }
+          }
+        } catch (error) {
+          console.error('과목 이동 중 오류 발생:', error);
+        }
       }
-      
-      // TODO: Update order in Supabase if needed
     }
   };
 
@@ -278,7 +396,10 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId, onCoursesUpdate }) =>
           <p>데이터를 불러오는 중...</p>
         </div>
       ) : (
-        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+        <DndContext 
+          sensors={sensors} 
+          onDragEnd={handleDragEnd}
+        >
           <div className="w-full overflow-x-auto rounded-xl shadow-lg bg-white p-4">
             <table className="min-w-full border-separate border-spacing-0">
               <thead>
@@ -314,18 +435,11 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId, onCoursesUpdate }) =>
                       {type}
                     </td>
                     {semesters.map((semester) => (
-                      <td 
-                        key={semester} 
-                        className={`
-                          ${getTypeStyle(type)}
-                          p-3 
-                          border-b 
-                          border-gray-100
-                          transition-colors 
-                          duration-200
-                          min-h-[120px]
-                          align-top
-                        `}
+                      <DroppableCell
+                        key={semester}
+                        semester={semester}
+                        type={type}
+                        style={getTypeStyle(type)}
                       >
                         <SortableContext 
                           items={courses.filter(course => 
@@ -350,7 +464,7 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId, onCoursesUpdate }) =>
                               </div>
                             ))}
                         </SortableContext>
-                      </td>
+                      </DroppableCell>
                     ))}
                   </tr>
                 ))}
