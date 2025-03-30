@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import CourseTable from './components/CourseTable'
 import GraduationCalculator from './components/GraduationCalculator'
 import Auth from './components/Auth'
+import Footer from './components/Footer'
 import { migrateLocalStorageToDB, Course, checkTablesExist, directAddSampleCourse } from './lib/supabase'
 import logo from './assets/logo_grad_kuya.svg'
 import { supabase } from './lib/supabase'
@@ -67,23 +68,26 @@ function App() {
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <header className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">
-          <img src={logo} alt="logo" className="w-32" />
-        </h1>
-        <button 
-          onClick={() => handleLogout()}
-          className="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 rounded-md"
-        >
-          로그아웃
-        </button>
-      </header>
-      <div className="space-y-8">
-        <CourseTable userId={userId} onCoursesUpdate={handleCoursesUpdate} />
-        <GraduationCalculator courses={courses} userId={userId} />
+    <>
+      <div className="container mx-auto p-4">
+        <header className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">
+            <img src={logo} alt="logo" className="w-32" />
+          </h1>
+          <button 
+            onClick={() => handleLogout()}
+            className="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 rounded-md"
+          >
+            로그아웃
+          </button>
+        </header>
+        <div className="space-y-8">
+          <CourseTable userId={userId} onCoursesUpdate={handleCoursesUpdate} />
+          <GraduationCalculator courses={courses} userId={userId} />
+        </div>
       </div>
-    </div>
+      <Footer />
+    </>
   )
 }
 
