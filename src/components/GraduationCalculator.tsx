@@ -280,16 +280,16 @@ const GraduationCalculator: React.FC<GraduationCalculatorProps> = ({ courses, us
         <tbody>
           {(isEditing ? editableCredits : creditTypes).map((type, index) => (
             <tr key={index} className={`
-              ${type.name === '기교' ? 'bg-amber-50/50' :
-                type.name === '심교' ? 'bg-rose-50/50' :
-                type.name === '지교' ? 'bg-sky-50/50' :
-                type.name === '지필' ? 'bg-sky-100/50' :
-                type.name === '전필' ? 'bg-emerald-100/50' :
-                type.name === '전선' ? 'bg-emerald-50/50' :
-                type.name === '전기' ? 'bg-emerald-50/70' :
-                type.name === '일선' ? 'bg-gray-50/50' :
-                type.name === '교직' ? 'bg-violet-50/50' :
-                type.name === '반교' ? 'bg-orange-50/50' :
+              ${type.name === '기교' ? 'bg-amber-50/40' :
+                type.name === '심교' ? 'bg-rose-50/40' :
+                type.name === '지교' ? 'bg-sky-50/40' :
+                type.name === '지필' ? 'bg-sky-50/60' :
+                type.name === '전필' ? 'bg-emerald-50/60' :
+                type.name === '전선' ? 'bg-green-50/40' :
+                type.name === '전기' ? 'bg-emerald-50/40' :
+                type.name === '일선' ? 'bg-gray-50/40' :
+                type.name === '교직' ? 'bg-violet-50/40' :
+                type.name === '반교' ? 'bg-orange-50/40' :
                 'bg-white'
               }
             `}>
