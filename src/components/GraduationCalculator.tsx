@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Course } from '../lib/supabase';
+import { getUserSettings, saveUserSettings } from '../lib/supabase';
 
 interface CreditRequirement {
   type: string;
@@ -10,9 +11,10 @@ interface CreditRequirement {
 
 interface GraduationCalculatorProps {
   courses: Course[];
+  userId: string;
 }
 
-const GraduationCalculator: React.FC<GraduationCalculatorProps> = ({ courses }) => {
+const GraduationCalculator: React.FC<GraduationCalculatorProps> = ({ courses, userId }) => {
   const defaultCreditTypes = [
     { name: '기교', required: 12 },
     { name: '심교', required: 15 },
@@ -32,20 +34,55 @@ const GraduationCalculator: React.FC<GraduationCalculatorProps> = ({ courses }) 
   const [editableCredits, setEditableCredits] = useState(defaultCreditTypes);
   const [totalRequired, setTotalRequired] = useState(132);
   
-  // 로컬 스토리지에서 저장된 기준학점 불러오기
+  // Supabase에서 사용자 설정 불러오기
   useEffect(() => {
-    const savedCreditTypes = localStorage.getItem('creditRequirements');
-    const savedTotalRequired = localStorage.getItem('totalCreditRequired');
+    const loadSettings = async () => {
+      if (!userId) return;
+      
+      try {
+        const settings = await getUserSettings(userId);
+        
+        if (settings && settings.credit_requirements && settings.credit_requirements.length > 0) {
+          setCreditTypes(settings.credit_requirements);
+          setEditableCredits(settings.credit_requirements);
+          console.log('불러온 기준학점:', settings.credit_requirements);
+        } else {
+          // 설정이 없으면 로컬 스토리지에서 시도
+          loadFromLocalStorage();
+        }
+        
+        if (settings && settings.total_credit_required) {
+          setTotalRequired(settings.total_credit_required);
+          console.log('불러온 총 기준학점:', settings.total_credit_required);
+        }
+      } catch (error) {
+        console.error('기준학점 설정 불러오기 실패:', error);
+        // 오류 시 로컬 스토리지에서 로드
+        loadFromLocalStorage();
+      }
+    };
     
-    if (savedCreditTypes) {
-      setCreditTypes(JSON.parse(savedCreditTypes));
-      setEditableCredits(JSON.parse(savedCreditTypes));
-    }
+    // 로컬 스토리지에서 설정 로드하는 함수
+    const loadFromLocalStorage = () => {
+      try {
+        const savedCreditTypes = localStorage.getItem('creditRequirements');
+        const savedTotalRequired = localStorage.getItem('totalCreditRequired');
+        
+        if (savedCreditTypes) {
+          setCreditTypes(JSON.parse(savedCreditTypes));
+          setEditableCredits(JSON.parse(savedCreditTypes));
+        }
+        
+        if (savedTotalRequired) {
+          setTotalRequired(JSON.parse(savedTotalRequired));
+        }
+      } catch (e) {
+        console.error('로컬 스토리지에서 설정 로드 실패:', e);
+      }
+    };
     
-    if (savedTotalRequired) {
-      setTotalRequired(JSON.parse(savedTotalRequired));
-    }
-  }, []);
+    loadSettings();
+  }, [userId]);
 
   // 학기 목록: 연도-학기 형식으로 변환 (예: 2025년 상반기 -> 2025-1학기)
   const formattedSemesters = useMemo(() => {
@@ -157,12 +194,35 @@ const GraduationCalculator: React.FC<GraduationCalculatorProps> = ({ courses }) 
   };
 
   // 기준학점 저장
-  const handleSaveEditing = () => {
+  const handleSaveEditing = async () => {
     setCreditTypes(editableCredits);
-    // 로컬 스토리지에 저장
+    setIsEditing(false);
+    
+    // 로컬 스토리지에 백업 저장
     localStorage.setItem('creditRequirements', JSON.stringify(editableCredits));
     localStorage.setItem('totalCreditRequired', JSON.stringify(totalRequired));
-    setIsEditing(false);
+    
+    // Supabase에 설정 저장
+    if (userId) {
+      try {
+        const settings = {
+          user_id: userId,
+          credit_requirements: editableCredits,
+          total_credit_required: totalRequired
+        };
+        
+        console.log('기준학점 설정 저장 시도:', settings);
+        const result = await saveUserSettings(settings);
+        
+        if (result) {
+          console.log('기준학점 설정 저장 성공');
+        } else {
+          console.warn('기준학점 설정 저장 실패');
+        }
+      } catch (error) {
+        console.error('기준학점 설정 저장 중 오류 발생:', error);
+      }
+    }
   };
 
   // 특정 이수구분의 기준학점 변경

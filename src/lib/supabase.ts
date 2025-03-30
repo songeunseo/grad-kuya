@@ -45,6 +45,8 @@ export interface UserSettings {
   semesters?: string[];
   visible_types?: string[];
   course_types_order?: string[];
+  credit_requirements?: Array<{name: string, required: number}>;
+  total_credit_required?: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -551,6 +553,8 @@ export async function saveUserSettings(settings: UserSettings): Promise<UserSett
     console.log('- semesters:', settings.semesters);
     console.log('- visible_types:', settings.visible_types);
     console.log('- course_types_order:', settings.course_types_order);
+    console.log('- credit_requirements:', settings.credit_requirements);
+    console.log('- total_credit_required:', settings.total_credit_required);
     
     // 배열 필드가 undefined인 경우 빈 배열로 초기화 
     // JSONB 타입으로 저장하기 위해 JSON.stringify 처리할 필요 없음
@@ -559,7 +563,9 @@ export async function saveUserSettings(settings: UserSettings): Promise<UserSett
       ...settings,
       semesters: settings.semesters || [],
       visible_types: settings.visible_types || [],
-      course_types_order: settings.course_types_order || []
+      course_types_order: settings.course_types_order || [],
+      credit_requirements: settings.credit_requirements || [],
+      total_credit_required: settings.total_credit_required || 132,
     };
     
     // 먼저 현재 세션이 유효한지 확인
@@ -603,6 +609,8 @@ export async function saveUserSettings(settings: UserSettings): Promise<UserSett
         semesters: safeSettings.semesters,
         visible_types: safeSettings.visible_types,
         course_types_order: safeSettings.course_types_order,
+        credit_requirements: safeSettings.credit_requirements,
+        total_credit_required: safeSettings.total_credit_required,
         updated_at: new Date().toISOString()
       };
       console.log('업데이트 페이로드:', JSON.stringify(updatePayload, null, 2));
@@ -633,7 +641,9 @@ export async function saveUserSettings(settings: UserSettings): Promise<UserSett
         user_id: safeSettings.user_id,
         semesters: safeSettings.semesters,
         visible_types: safeSettings.visible_types,
-        course_types_order: safeSettings.course_types_order
+        course_types_order: safeSettings.course_types_order,
+        credit_requirements: safeSettings.credit_requirements,
+        total_credit_required: safeSettings.total_credit_required
       };
       console.log('삽입할 데이터:', JSON.stringify(insertData, null, 2));
       

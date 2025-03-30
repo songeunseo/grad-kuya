@@ -94,7 +94,7 @@ function App() {
       </header>
       <div className="space-y-8">
         <CourseTable userId={userId} onCoursesUpdate={handleCoursesUpdate} />
-        <GraduationCalculator courses={courses} />
+        <GraduationCalculator courses={courses} userId={userId} />
       </div>
     </div>
   )
