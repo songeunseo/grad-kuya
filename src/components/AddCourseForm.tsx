@@ -1,14 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { Course } from '../lib/supabase';
 
 interface CourseFormProps {
-  onAddCourse: (course: {
-    name: string;
-    type: string;
-    credits: number;
-    semester: string;
-    Advanced_tag?: '선도적세계인' | '실천적사회인' | '창의적전문인';
-    Basic_tag?: '글쓰기' | '외국어' | 'S/W' | '인성';
-  }) => void;
+  onAddCourse: (course: Omit<Course, 'id' | 'created_at' | 'user_id'>) => void;
 }
 
 const AddCourseForm: React.FC<CourseFormProps> = ({ onAddCourse }) => {
