@@ -3,7 +3,7 @@ import CourseTable from './components/CourseTable'
 import GraduationCalculator from './components/GraduationCalculator'
 import Auth from './components/Auth'
 import { migrateLocalStorageToDB, Course, checkTablesExist, directAddSampleCourse } from './lib/supabase'
-import logo from './assets/logo.svg'
+import logo from './assets/logo_grad_kuya.svg'
 import { supabase } from './lib/supabase'
 
 function App() {
@@ -26,6 +26,14 @@ function App() {
     };
 
     verifySupabase();
+
+    // 파비콘 로드 확인
+    const faviconLink = document.querySelector('link[rel="icon"]');
+    if (faviconLink) {
+      console.log('파비콘 설정 확인: ', faviconLink.getAttribute('href'));
+    } else {
+      console.warn('파비콘이 설정되지 않았습니다.');
+    }
   }, []);
 
   const handleLogin = async (userId: string) => {

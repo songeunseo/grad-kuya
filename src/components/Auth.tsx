@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import kuImage from '../assets/ku_img.png';
-import logo from '../assets/logo.svg';
 
 interface AuthProps {
   onLogin: (userId: string) => void;
