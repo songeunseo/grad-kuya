@@ -21,16 +21,236 @@ interface Course {
   type: string;
   credits: number;
   semester: string;
+  tag?: '선도적세계인' | '실천적사회인' | '창의적전문인';
 }
 
 const CourseTable: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([
     {
       id: '1',
-      name: '영어사회봉사러닝',
+      name: '동아시아를관통하는문화콘텐츠',
+      type: '심교',
+      tag: '창의적전문인',
+      credits: 2,
+      semester: '2023년 상반기'
+    },
+    {
+      id: '2',
+      name: '창의적사고와표현',
       type: '기교',
       credits: 3,
       semester: '2024년 상반기'
+    },
+    {
+      id: '3',
+      name: '매스미디어론',
+      type: '심교',
+      tag: '선도적세계인',
+      credits: 3,
+      semester: '2024년 상반기'
+    },
+    {
+      id: '6',
+      name: '미적분학',
+      type: '지교',
+      credits: 3,
+      semester: '2023년 상반기'
+    },
+    {
+      id: '7',
+      name: 'C프로그래밍',
+      type: '지교',
+      credits: 3,
+      semester: '2024년 상반기'
+    },
+    {
+      id: '8',
+      name: '확률과통계',
+      type: '지교',
+      credits: 3,
+      semester: '2024년 상반기'
+    },
+    {
+      id: '9',
+      name: '이산수학',
+      type: '지교',
+      credits: 3,
+      semester: '2024년 하반기'
+    },
+    {
+      id: '10',
+      name: 'JAVA프로그래밍',
+      type: '지교',
+      credits: 3,
+      semester: '2024년 하반기'
+    },
+    {
+      id: '11',
+      name: '웹프로그래밍',
+      type: '전선',
+      credits: 3,
+      semester: '2024년 상반기'
+    },
+    {
+      id: '12',
+      name: '시스템프로그래밍',
+      type: '전선',
+      credits: 3,
+      semester: '2024년 하반기'
+    },
+    {
+      id: '13',
+      name: '기계학습',
+      type: '전선',
+      credits: 3,
+      semester: '2024년 하반기'
+    },
+    {
+      id: '14',
+      name: '랜덤프로세스개론',
+      type: '전선',
+      credits: 3,
+      semester: '2024년 하반기'
+    },
+    {
+      id: '15',
+      name: '전공기초프로젝트',
+      type: '전선',
+      credits: 3,
+      semester: '2025년 상반기'
+    },
+    {
+      id: '16',
+      name: '자료구조',
+      type: '전선',
+      credits: 3,
+      semester: '2025년 상반기'
+    },
+    {
+      id: '17',
+      name: '운영체제',
+      type: '전선',
+      credits: 3,
+      semester: '2025년 상반기'
+    },
+    {
+      id: '18',
+      name: '데이터베이스',
+      type: '전선',
+      credits: 3,
+      semester: '2025년 상반기'
+    },
+    {
+      id: '19',
+      name: '인공지능',
+      type: '전선',
+      credits: 3,
+      semester: '2025년 상반기'
+    },
+    {
+      id: '20',
+      name: '드림학기제',
+      type: '전선',
+      credits: 6,
+      semester: '2025년 하반기'
+    },
+    {
+      id: '21',
+      name: '알고리즘',
+      type: '전선',
+      credits: 3,
+      semester: '2025년 하반기'
+    },
+    {
+      id: '22',
+      name: '컴퓨터네트워크1',
+      type: '전선',
+      credits: 3,
+      semester: '2025년 하반기'
+    },
+    {
+      id: '23',
+      name: '컴퓨터구조',
+      type: '전선',
+      credits: 3,
+      semester: '2025년 하반기'
+    },
+    {
+      id: '24',
+      name: '데이터사이언스',
+      type: '전선',
+      credits: 3,
+      semester: '2025년 하반기'
+    },
+    {
+      id: '25',
+      name: '보이지않는컴퓨팅세계',
+      type: '일선',
+      credits: 3,
+      semester: '2023년 하반기'
+    },
+    {
+      id: '26',
+      name: '소비자와기업가정신개발',
+      type: '일선',
+      credits: 3,
+      semester: '2023년 하반기'
+    },
+    {
+      id: '27',
+      name: '선형대수학',
+      type: '지교',
+      credits: 3,
+      semester: '2025년 상반기'
+    },
+    {
+      id: '28',
+      name: '현대건축의이해',
+      type: '일선',
+      credits: 3,
+      semester: '2026년 상반기'
+    },
+    {
+      id: '29',
+      name: '신화와철학',
+      type: '일선',
+      credits: 3,
+      semester: '2026년 상반기'
+    },
+    {
+      id: '30',
+      name: '졸업프로젝트(1)',
+      type: '전선',
+      credits: 3,
+      semester: '2027년 상반기'
+    },
+    {
+      id: '31',
+      name: '드림팀기획(하나더)',
+      type: '전선',
+      credits: 3,
+      semester: '2027년 상반기'
+    },
+    {
+      id: '32',
+      name: '졸업프로젝트(2)',
+      type: '전선',
+      credits: 3,
+      semester: '2027년 하반기'
+    },
+    {
+      id: '33',
+      name: '전공1',
+      type: '전선',
+      credits: 3,
+      semester: '2027년 하반기'
+    },
+    {
+      id: '34',
+      name: '전공2',
+      type: '전선',
+      credits: 3,
+      semester: '2027년 하반기'
     },
   ]);
 
@@ -83,13 +303,13 @@ const CourseTable: React.FC = () => {
     '2027년 상반기', '2027년 하반기'
   ];
 
-  const courseTypes = ['기교', '심교', '지교(반교)', '전선', '일선'];
+  const courseTypes = ['기교', '심교', '지교', '전선', '일선'];
 
   const getTypeStyle = (type: string) => {
     switch (type) {
       case '기교': return 'bg-amber-50/50 hover:bg-amber-50/70';
       case '심교': return 'bg-rose-50/50 hover:bg-rose-50/70';
-      case '지교(반교)': return 'bg-sky-50/50 hover:bg-sky-50/70';
+      case '지교': return 'bg-sky-50/50 hover:bg-sky-50/70';
       case '전선': return 'bg-emerald-50/50 hover:bg-emerald-50/70';
       default: return 'bg-gray-50/50 hover:bg-gray-50/70';
     }
@@ -163,6 +383,7 @@ const CourseTable: React.FC = () => {
                                 name={course.name}
                                 type={course.type}
                                 credits={course.credits}
+                                tag={course.tag}
                               />
                               <button
                                 onClick={() => handleDeleteCourse(course.id)}
