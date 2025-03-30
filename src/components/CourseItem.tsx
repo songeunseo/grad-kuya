@@ -35,6 +35,15 @@ export const CourseItem: React.FC<CourseProps> = ({ id, name, type, credits, Adv
     }
   };
 
+  const getTagColor = (type: string) => {
+    switch (type) {
+      case '기교': return 'bg-amber-100 border-amber-200 text-amber-800';
+      case '심교': return 'bg-rose-100 border-rose-200 text-rose-800';
+      case '지교': return 'bg-sky-100 border-sky-200 text-sky-800';
+      default: return 'bg-white border-gray-200 text-gray-600';
+    }
+  };
+
   return (
     <div
       ref={setNodeRef}
@@ -57,7 +66,7 @@ export const CourseItem: React.FC<CourseProps> = ({ id, name, type, credits, Adv
       <div className="text-sm font-semibold text-gray-800">{name}</div>
       <div className="text-xs mt-1 text-gray-600 flex justify-between">
         {(Advanced_tag || Basic_tag) ? (
-          <span className="bg-white px-2 py-0.5 rounded-full text-gray-600 text-[10px] font-medium border border-gray-200">
+          <span className={`${getTagColor(type)} px-2 py-0.5 rounded-full text-[10px] font-medium border`}>
             {Advanced_tag || Basic_tag}
           </span>
         ) : (

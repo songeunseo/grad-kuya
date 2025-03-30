@@ -63,14 +63,19 @@ const CourseTable: React.FC<CourseTableProps> = ({ userId }) => {
   };
 
   const handleAddCourse = async (courseData: Omit<Course, 'id' | 'created_at' | 'user_id'>) => {
+    console.log('handleAddCourse called with:', courseData);
     try {
       const newCourse = await addCourse({
         ...courseData,
         user_id: userId
       });
       
+      console.log('New course added:', newCourse);
+      
       if (newCourse) {
         setCourses([...courses, newCourse]);
+      } else {
+        console.error('Failed to add course, newCourse is null');
       }
     } catch (error) {
       console.error('Error adding course:', error);
