@@ -90,12 +90,19 @@ export const CourseItem: React.FC<CourseProps> = ({
     }
   };
 
-  // 6자 이상이면 ...으로 표시
-  const truncateName = (name: string) => {
-    if (name.length > 6) {
-      return name.slice(0, 6) + '...';
+  // 태그 유무에 따라 다르게 이름 자르기
+  const truncateName = (name: string, hasTag: boolean) => {
+    if (!hasTag) { // 태그 없는 과목은 기존처럼 6자로 제한
+      if (name.length > 6) {
+        return name.slice(0, 6) + '...';
+      }
+      return name;
+    } else { // 태그 있는 과목은 9자까지 허용
+      if (name.length > 9) {
+        return name.slice(0, 9) + '...';
+      }
+      return name;
     }
-    return name;
   };
 
   // 태그가 있는지 확인
@@ -159,13 +166,18 @@ export const CourseItem: React.FC<CourseProps> = ({
         `}
       >
         <div className="space-y-2">
-          <input
-            type="text"
-            value={editName}
-            onChange={(e) => setEditName(e.target.value)}
-            className="w-full p-1 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            autoFocus
-          />
+          <div className="relative">
+            <input
+              type="text"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              className="w-full p-1 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              autoFocus
+            />
+            <div className="absolute right-2 top-1 text-xs text-gray-400">
+              {editName.length}/12
+            </div>
+          </div>
           <div className="flex items-center">
             <span className="text-xs text-gray-600 mr-2">학점:</span>
             <input
@@ -220,7 +232,7 @@ export const CourseItem: React.FC<CourseProps> = ({
       >
         {hasTag ? (
           <>
-            <div className="text-sm font-semibold text-gray-800">{truncateName(name)}</div>
+            <div className="text-sm font-semibold text-gray-800">{truncateName(name, true)}</div>
             <div className="text-xs mt-1 text-gray-600 flex justify-between">
               {(Advanced_tag || (type === '기교' && Basic_tag)) ? (
                 <span className={`${getTagColor(type)} px-2 py-0.5 rounded-full text-[10px] font-medium border`}>
@@ -236,7 +248,7 @@ export const CourseItem: React.FC<CourseProps> = ({
           </>
         ) : (
           <div className="flex justify-between items-center">
-            <div className="text-sm font-semibold text-gray-800 truncate max-w-[70%]">{truncateName(name)}</div>
+            <div className="text-sm font-semibold text-gray-800 truncate max-w-[70%]">{truncateName(name, false)}</div>
             <span className="bg-white ml-1 px-1.5 py-0.5 rounded-full text-gray-600 text-[10px] font-bold whitespace-nowrap">
               {credits}학점
             </span>
