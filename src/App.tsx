@@ -49,7 +49,12 @@ function App() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Supabase 세션 종료
+    await supabase.auth.signOut();
+    console.log('Supabase 로그아웃 완료');
+    
+    // 로컬 상태 초기화
     setUserId(null);
     localStorage.removeItem('userId');
   };
@@ -73,7 +78,7 @@ function App() {
           <img src={logo} alt="logo" className="w-32" />
         </h1>
         <button 
-          onClick={handleLogout}
+          onClick={() => handleLogout()}
           className="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 rounded-md"
         >
           로그아웃
