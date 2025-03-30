@@ -38,9 +38,6 @@ const AddCourseForm: React.FC<CourseFormProps> = ({ onAddCourse, semesters = [] 
     } else if (type === '심교') {
       setAdvancedTag('선도적세계인');
       setBasicTag('');
-    } else if (type === '지교') {
-      setAdvancedTag('');
-      setBasicTag('글쓰기');
     } else {
       setAdvancedTag('');
       setBasicTag('');
@@ -59,8 +56,7 @@ const AddCourseForm: React.FC<CourseFormProps> = ({ onAddCourse, semesters = [] 
         credits,
         semester,
         ...(type === '심교' && advancedTag ? { Advanced_tag: advancedTag } : {}),
-        ...(type === '기교' && basicTag ? { Basic_tag: basicTag } : {}),
-        ...(type === '지교' && basicTag ? { Basic_tag: basicTag } : {})
+        ...(type === '기교' && basicTag ? { Basic_tag: basicTag } : {})
       };
       
       console.log('onAddCourse 호출 전 과목 데이터:', courseData);
@@ -221,7 +217,7 @@ const AddCourseForm: React.FC<CourseFormProps> = ({ onAddCourse, semesters = [] 
                 </div>
               )}
               
-              {(type === '지교' || type === '기교') && (
+              {type === '기교' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     기초 태그

@@ -76,7 +76,7 @@ export const CourseItem: React.FC<CourseProps> = ({ id, name, type, credits, Adv
     >
       <div className="text-sm font-semibold text-gray-800">{name}</div>
       <div className="text-xs mt-1 text-gray-600 flex justify-between">
-        {(Advanced_tag || Basic_tag) ? (
+        {(Advanced_tag || (type === '기교' && Basic_tag)) ? (
           <span className={`${getTagColor(type)} px-2 py-0.5 rounded-full text-[10px] font-medium border`}>
             {Advanced_tag || Basic_tag}
           </span>
