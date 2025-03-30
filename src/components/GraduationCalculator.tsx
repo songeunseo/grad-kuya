@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Course } from '../lib/supabase';
 
 interface CreditRequirement {
@@ -13,7 +13,7 @@ interface GraduationCalculatorProps {
 }
 
 const GraduationCalculator: React.FC<GraduationCalculatorProps> = ({ courses }) => {
-  const creditTypes = [
+  const defaultCreditTypes = [
     { name: '기교', required: 12 },
     { name: '심교', required: 15 },
     { name: '지교', required: 18 },
@@ -25,6 +25,27 @@ const GraduationCalculator: React.FC<GraduationCalculatorProps> = ({ courses }) 
     { name: '교직', required: 0 },
     { name: '반교', required: 0 },
   ];
+
+  // 저장된 기준학점이 있으면 불러오기, 없으면 기본값 사용
+  const [creditTypes, setCreditTypes] = useState(defaultCreditTypes);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editableCredits, setEditableCredits] = useState(defaultCreditTypes);
+  const [totalRequired, setTotalRequired] = useState(132);
+  
+  // 로컬 스토리지에서 저장된 기준학점 불러오기
+  useEffect(() => {
+    const savedCreditTypes = localStorage.getItem('creditRequirements');
+    const savedTotalRequired = localStorage.getItem('totalCreditRequired');
+    
+    if (savedCreditTypes) {
+      setCreditTypes(JSON.parse(savedCreditTypes));
+      setEditableCredits(JSON.parse(savedCreditTypes));
+    }
+    
+    if (savedTotalRequired) {
+      setTotalRequired(JSON.parse(savedTotalRequired));
+    }
+  }, []);
 
   // 학기 목록: 연도-학기 형식으로 변환 (예: 2025년 상반기 -> 2025-1학기)
   const formattedSemesters = useMemo(() => {
@@ -121,13 +142,75 @@ const GraduationCalculator: React.FC<GraduationCalculatorProps> = ({ courses }) 
 
   // 총 남은 학점
   const totalCreditsRemaining = useMemo(() => {
-    const totalRequired = creditTypes.reduce((sum, type) => sum + type.required, 0);
     return Math.max(0, totalRequired - totalCreditsCompleted);
-  }, [totalCreditsCompleted, creditTypes]);
+  }, [totalCreditsCompleted, totalRequired]);
+
+  // 기준학점 편집 시작
+  const handleStartEditing = () => {
+    setEditableCredits([...creditTypes]);
+    setIsEditing(true);
+  };
+
+  // 기준학점 편집 취소
+  const handleCancelEditing = () => {
+    setIsEditing(false);
+  };
+
+  // 기준학점 저장
+  const handleSaveEditing = () => {
+    setCreditTypes(editableCredits);
+    // 로컬 스토리지에 저장
+    localStorage.setItem('creditRequirements', JSON.stringify(editableCredits));
+    localStorage.setItem('totalCreditRequired', JSON.stringify(totalRequired));
+    setIsEditing(false);
+  };
+
+  // 특정 이수구분의 기준학점 변경
+  const handleCreditChange = (index: number, value: number) => {
+    const updatedCredits = [...editableCredits];
+    updatedCredits[index] = {
+      ...updatedCredits[index],
+      required: value
+    };
+    setEditableCredits(updatedCredits);
+  };
+
+  // 총 기준학점 변경
+  const handleTotalRequiredChange = (value: number) => {
+    setTotalRequired(value);
+  };
 
   return (
     <div className="mt-8 bg-white p-4 rounded-xl shadow-lg">
-      <h2 className="text-2xl font-bold mb-4 text-center">졸업 계산기</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold text-center">졸업 계산기</h2>
+        {isEditing ? (
+          <div className="flex space-x-2">
+            <button 
+              onClick={handleCancelEditing}
+              className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+            >
+              취소
+            </button>
+            <button 
+              onClick={handleSaveEditing}
+              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+            >
+              저장
+            </button>
+          </div>
+        ) : (
+          <button 
+            onClick={handleStartEditing}
+            className="px-3 py-1 bg-emerald-500 text-white rounded hover:bg-emerald-600 transition-colors flex items-center"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+            </svg>
+            기준학점 수정
+          </button>
+        )}
+      </div>
       <table className="w-full border-separate border-spacing-0">
         <thead>
           <tr className="bg-gray-50">
@@ -140,17 +223,36 @@ const GraduationCalculator: React.FC<GraduationCalculatorProps> = ({ courses }) 
           </tr>
         </thead>
         <tbody>
-          {creditTypes.map((type, index) => (
+          {(isEditing ? editableCredits : creditTypes).map((type, index) => (
             <tr key={index} className={`
               ${type.name === '기교' ? 'bg-amber-50/50' :
                 type.name === '심교' ? 'bg-rose-50/50' :
                 type.name === '지교' ? 'bg-sky-50/50' :
+                type.name === '지필' ? 'bg-sky-100/50' :
+                type.name === '전필' ? 'bg-emerald-100/50' :
                 type.name === '전선' ? 'bg-emerald-50/50' :
+                type.name === '전기' ? 'bg-emerald-200/50' :
+                type.name === '일선' ? 'bg-gray-50/50' :
+                type.name === '교직' ? 'bg-violet-50/50' :
+                type.name === '반교' ? 'bg-orange-50/50' :
                 'bg-white'
               }
             `}>
               <td className="border-b border-gray-100 p-3 font-medium text-gray-700">{type.name}</td>
-              <td className="border-b border-gray-100 p-3 text-center">{type.required}</td>
+              <td className="border-b border-gray-100 p-3 text-center">
+                {isEditing ? (
+                  <input
+                    type="number"
+                    min="0"
+                    max="150"
+                    value={type.required}
+                    onChange={(e) => handleCreditChange(index, parseInt(e.target.value) || 0)}
+                    className="w-16 p-1 text-center border rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                ) : (
+                  type.required
+                )}
+              </td>
               {formattedSemesters.map((semester, i) => (
                 <td key={i} className="border-b border-gray-100 p-3 text-center">
                   {creditsByTypeAndSemester[type.name][semester] || 0}
@@ -163,7 +265,20 @@ const GraduationCalculator: React.FC<GraduationCalculatorProps> = ({ courses }) 
           ))}
           <tr className="bg-gray-100 font-bold">
             <td className="border-b border-gray-100 p-3">총점</td>
-            <td className="border-b border-gray-100 p-3 text-center">132</td>
+            <td className="border-b border-gray-100 p-3 text-center">
+              {isEditing ? (
+                <input
+                  type="number"
+                  min="0"
+                  max="200"
+                  value={totalRequired}
+                  onChange={(e) => handleTotalRequiredChange(parseInt(e.target.value) || 0)}
+                  className="w-16 p-1 text-center border rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              ) : (
+                totalRequired
+              )}
+            </td>
             {formattedSemesters.map((semester, i) => (
               <td key={i} className="border-b border-gray-100 p-3 text-center">
                 {totalCreditsBySemester[semester] || 0}
