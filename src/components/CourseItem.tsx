@@ -10,6 +10,7 @@ interface CourseProps {
   Advanced_tag?: '선도적세계인' | '실천적사회인' | '창의적전문인';
   Basic_tag?: '글쓰기' | '외국어' | 'S/W' | '인성' | '취창업';
   onUpdate?: (id: string, updates: {name?: string, credits?: number}) => void;
+  onDelete?: (id: string) => void;
 }
 
 export const CourseItem: React.FC<CourseProps> = ({ 
@@ -19,7 +20,8 @@ export const CourseItem: React.FC<CourseProps> = ({
   credits, 
   Advanced_tag, 
   Basic_tag,
-  onUpdate
+  onUpdate,
+  onDelete
 }) => {
   const {
     attributes,
@@ -128,6 +130,14 @@ export const CourseItem: React.FC<CourseProps> = ({
       });
     }
     setIsEditing(false);
+  };
+
+  // 삭제 처리
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete(id);
+    }
+    setShowMenu(false);
   };
 
   // 수정 모드 UI 렌더링
@@ -252,6 +262,15 @@ export const CourseItem: React.FC<CourseProps> = ({
               <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
             </svg>
             수정
+          </button>
+          <button
+            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
+            onClick={handleDelete}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            삭제
           </button>
         </div>
       )}
