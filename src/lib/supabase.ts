@@ -399,7 +399,7 @@ export async function directAddSampleCourse(userId: string) {
     type: '기교',
     credits: 3,
     semester: '2025년 상반기',
-    Basic_tag: '글쓰기' as '글쓰기', // 타입 명시
+    basic_tag: '글쓰기', // Basic_tag를 basic_tag로 변경
     user_id: userId,
   };
 
