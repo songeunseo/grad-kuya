@@ -426,177 +426,125 @@ export async function directAddSampleCourse(userId: string) {
 }
 
 // 사용자 설정 가져오기
-export async function getUserSettings(userId: string): Promise<UserSettings | null> {
-  if (!supabaseEnabled || !userId) {
-    console.warn('Supabase가 비활성화되었거나 유저 ID가 없어 로컬 스토리지에서 설정을 가져옵니다.');
+export async function getUserSettings(userId: string) {
+  console.log('getUserSettings 호출됨, userId:', userId);
+  
+  if (!supabaseEnabled) {
+    console.warn('Supabase가 비활성화되어 로컬 스토리지에서만 설정을 불러옵니다.');
     return null;
   }
   
   try {
-    // 먼저 현재 세션이 유효한지 확인
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !session) {
-      console.error('유효한 세션이 없습니다. 설정을 가져올 수 없습니다.', sessionError);
-      return null;
-    }
+    console.log('Supabase에서 사용자 설정 찾는 중...');
     
-    // RLS 정책 확인: 사용자 ID가 일치하는지 확인
-    if (session.user.id !== userId) {
-      console.warn('세션 사용자 ID와 요청 사용자 ID가 일치하지 않습니다. RLS 정책으로 인해 액세스가 거부될 수 있습니다.');
-    }
-    
-    // 사용자 설정 쿼리
+    // Accept 헤더 명시적 추가
     const { data, error } = await supabase
       .from('user_settings')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
     
     if (error) {
-      // 테이블이 존재하지 않는 오류인 경우 (42P01)
-      if (error.code === '42P01') {
-        console.error('user_settings 테이블이 존재하지 않습니다. SQL 쿼리를 실행하여 테이블을 생성해야 합니다.');
-        return null;
-      }
-      
-      // PGRST116은 단일 레코드를 찾을 수 없음을 의미 - 오류가 아님
-      if (error.code === 'PGRST116') {
-        return null;
-      }
-      
-      // 접근 제한 오류인 경우
-      if (error.code === '42501' || error.message?.includes('permission denied')) {
-        console.error('user_settings 테이블에 접근 권한이 없습니다. RLS 정책을 확인하세요.');
-      }
-      
-      console.error('사용자 설정 가져오기 오류:', error);
-      if (error.details) console.error('- 오류 세부정보:', error.details);
-      if (error.hint) console.error('- 오류 힌트:', error.hint); 
-      if (error.message) console.error('- 오류 메시지:', error.message);
-      if (error.code) console.error('- 오류 코드:', error.code);
+      console.error('Supabase 설정 로드 오류:', error);
+      console.warn('Supabase에 저장된 사용자 설정이 없어 로컬 스토리지에서 로드합니다.');
       return null;
     }
     
+    if (!data) {
+      console.log('사용자 설정이 없습니다. 기본값 사용');
+      return null;
+    }
+    
+    console.log('Supabase에서 찾은 사용자 설정:', data);
     return data;
   } catch (err) {
-    console.error('사용자 설정 가져오기 예외:', err);
+    console.error('Supabase 설정 로드 중 예외 발생:', err);
     return null;
   }
 }
 
-// 사용자 설정 저장/업데이트
-export async function saveUserSettings(settings: UserSettings): Promise<UserSettings | null> {
-  if (!supabaseEnabled || !settings.user_id) {
-    console.warn('Supabase가 비활성화되었거나 유저 ID가 없어 로컬 스토리지에만 저장합니다.');
-    return null;
+// 사용자 설정 저장하기
+export async function saveUserSettings(settings: any) {
+  console.log('saveUserSettings 호출됨, 데이터:', settings);
+  
+  if (!supabaseEnabled) {
+    console.warn('Supabase가 비활성화되어 설정을 저장할 수 없습니다.');
+    return false;
   }
   
   try {
-    // 배열 필드가 undefined인 경우 빈 배열로 초기화 
-    // JSONB 타입으로 저장하기 위해 JSON.stringify 처리할 필요 없음
-    // Supabase가 자동으로 JavaScript 배열을 JSONB로 변환
-    const safeSettings = {
-      ...settings,
-      semesters: settings.semesters || [],
-      visible_types: settings.visible_types || [],
-      course_types_order: settings.course_types_order || [],
-      credit_requirements: settings.credit_requirements || [],
-      total_credit_required: settings.total_credit_required || 132,
-    };
+    // 세션 확인
+    const { data: session } = await supabase.auth.getSession();
+    console.log('현재 세션:', session);
     
-    // 먼저 현재 세션이 유효한지 확인
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !session) {
-      console.error('유효한 세션이 없습니다. 설정을 저장할 수 없습니다.', sessionError);
-      return null;
+    if (!session?.session?.user) {
+      console.error('설정 저장 에러: 인증된 사용자 없음');
+      return false;
     }
     
-    // 기존 설정이 있는지 확인
-    const { data: existingData, error: checkError } = await supabase
+    // 현재 설정이 있는지 확인
+    console.log('기존 설정 확인 중...');
+    const { data: existingSettings, error: checkError } = await supabase
       .from('user_settings')
       .select('id')
-      .eq('user_id', safeSettings.user_id)
+      .eq('user_id', settings.user_id)
       .maybeSingle();
     
-    if (checkError) {
-      // 테이블이 존재하지 않는 오류인 경우 (42P01)
-      if (checkError.code === '42P01') {
-        console.error('테이블이 존재하지 않습니다. SQL 쿼리를 실행하여 테이블을 생성해야 합니다.');
-        return null;
-      }
-      // PGRST116이 아닌 다른 오류인 경우
-      if (checkError.code !== 'PGRST116') {
-        console.error('설정 확인 오류:', checkError);
-        return null;
-      }
-    }
+    console.log('기존 설정 확인 결과:', existingSettings, checkError);
     
     let result;
     
-    if (existingData?.id) {
+    if (existingSettings) {
       // 기존 설정 업데이트
-      const updatePayload = {
-        semesters: safeSettings.semesters,
-        visible_types: safeSettings.visible_types,
-        course_types_order: safeSettings.course_types_order,
-        credit_requirements: safeSettings.credit_requirements,
-        total_credit_required: safeSettings.total_credit_required,
-        updated_at: new Date().toISOString()
-      };
-      
+      console.log('기존 설정 업데이트 중...');
       const { data, error } = await supabase
         .from('user_settings')
-        .update(updatePayload)
-        .eq('id', existingData.id)
-        .select()
-        .single();
+        .update({
+          semesters: settings.semesters,
+          visible_types: settings.visible_types,
+          course_types_order: settings.course_types_order,
+          credit_requirements: settings.credit_requirements,
+          total_credit_required: settings.total_credit_required,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingSettings.id)
+        .select();
       
       if (error) {
-        console.error('설정 업데이트 오류:', error);
-        if (error.details) console.error('- 오류 세부정보:', error.details);
-        if (error.hint) console.error('- 오류 힌트:', error.hint);
-        if (error.message) console.error('- 오류 메시지:', error.message);
-        if (error.code) console.error('- 오류 코드:', error.code);
-        return null;
+        console.error('설정 업데이트 에러:', error);
+        return false;
       }
       
-      result = data;
+      console.log('설정 업데이트 결과:', data);
+      result = true;
     } else {
       // 새 설정 생성
-      const insertData = {
-        user_id: safeSettings.user_id,
-        semesters: safeSettings.semesters,
-        visible_types: safeSettings.visible_types,
-        course_types_order: safeSettings.course_types_order,
-        credit_requirements: safeSettings.credit_requirements,
-        total_credit_required: safeSettings.total_credit_required
-      };
-      
+      console.log('새 설정 생성 중...');
       const { data, error } = await supabase
         .from('user_settings')
-        .insert([insertData])
-        .select()
-        .single();
+        .insert([{
+          user_id: settings.user_id,
+          semesters: settings.semesters,
+          visible_types: settings.visible_types,
+          course_types_order: settings.course_types_order,
+          credit_requirements: settings.credit_requirements,
+          total_credit_required: settings.total_credit_required
+        }])
+        .select();
       
       if (error) {
-        console.error('설정 생성 오류:', error);
-        
-        // 세부 오류 정보 출력
-        if (error.details) console.error('- 오류 세부정보:', error.details);
-        if (error.hint) console.error('- 오류 힌트:', error.hint);
-        if (error.message) console.error('- 오류 메시지:', error.message);
-        if (error.code) console.error('- 오류 코드:', error.code);
-        
-        return null;
+        console.error('설정 생성 에러:', error);
+        return false;
       }
       
-      result = data;
+      console.log('설정 생성 결과:', data);
+      result = true;
     }
     
     return result;
   } catch (err) {
-    console.error('설정 저장 중 예외 발생:', err);
-    return null;
+    console.error('설정 저장 예외:', err);
+    return false;
   }
 }
 
