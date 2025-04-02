@@ -4,6 +4,7 @@ import kuImage from '../assets/ku_img.png';
 
 interface AuthProps {
   onLogin: (userId: string) => void;
+  signup?: boolean; // 회원가입 모드 여부 (선택적)
 }
 
 // 유효한 입학년도 범위 생성 (현재 년도부터 10년 전까지)
@@ -19,13 +20,13 @@ const generateYearOptions = () => {
 // 전공 타입
 type MajorType = '단일전공' | '복수전공' | '부전공';
 
-const Auth: React.FC<AuthProps> = ({ onLogin }) => {
+const Auth: React.FC<AuthProps> = ({ onLogin, signup = false }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(signup);
   const [emailChecked, setEmailChecked] = useState(false);
   const [emailValid, setEmailValid] = useState(true);
   const [isEmailTaken, setIsEmailTaken] = useState(false);
@@ -43,6 +44,11 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   
   // 입학년도 옵션
   const yearOptions = generateYearOptions();
+
+  useEffect(() => {
+    // signup prop이 변경되면 isSignUp 상태 업데이트
+    setIsSignUp(signup);
+  }, [signup]);
 
   useEffect(() => {
     // Check if user is already logged in
