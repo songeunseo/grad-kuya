@@ -15,7 +15,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CourseItem } from './CourseItem';
 import AddCourseForm from './AddCourseForm';
-import SemesterManager from './SemesterManager';
+import SemesterManager from './semester/SemesterManager';
 import CourseTypeManager from './CourseTypeManager';
 import { 
   getCourses, 

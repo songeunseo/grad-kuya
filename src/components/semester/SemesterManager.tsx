@@ -1,57 +1,37 @@
-import React, { useState } from 'react';
-import '../../styles/modal.css'; // 모달 스타일 임포트
+import React, { useState, useCallback } from 'react';
+import '../../styles/modal.css';
 import SemesterModal from './SemesterModal';
-import useSemesterManagement from '../../hooks/useSemesterManagement';
+import useSemesterManagement, { SemesterType } from '../../hooks/useSemesterManagement';
 
 interface SemesterManagerProps {
   semesters: string[];
   onSemestersChange: (semesters: string[]) => void;
 }
 
-/**
- * 학기 관리 메인 컴포넌트
- */
 const SemesterManager: React.FC<SemesterManagerProps> = ({ semesters, onSemestersChange }) => {
   const [isOpen, setIsOpen] = useState(false);
-  
-  // 학기 관리 훅 사용
-  const { 
-    addSemester, 
-    addMultipleSemesters, 
-    deleteSemester, 
-    semesterToGradeFormat, 
-    generateYearOptions 
+  const {
+    addSemester,
+    addMultipleSemesters,
+    deleteSemester,
+    semesterToGradeFormat,
+    yearOptions,
   } = useSemesterManagement(semesters);
 
-  // 모달 토글 함수
-  const toggleModal = () => {
-    setIsOpen(!isOpen);
-  };
+  const toggleModal = useCallback(() => setIsOpen(prev => !prev), []);
 
-  // 단일 학기 추가 핸들러
-  const handleAddSemester = (year: number, semesterType: string) => {
-    const updatedSemesters = addSemester(year, semesterType);
-    onSemestersChange(updatedSemesters);
+  const handlers = {
+    onAddSingle: (year: number, semesterType: string) =>
+      onSemestersChange(addSemester(year, semesterType as SemesterType)),
+    onAddMultiple: (startYear: number, endYear: number) =>
+      onSemestersChange(addMultipleSemesters(startYear, endYear)),
+    onDelete: (semester: string) =>
+      onSemestersChange(deleteSemester(semester)),
   };
-
-  // 다중 학기 추가 핸들러
-  const handleAddMultipleSemesters = (startYear: number, endYear: number) => {
-    const updatedSemesters = addMultipleSemesters(startYear, endYear);
-    onSemestersChange(updatedSemesters);
-  };
-
-  // 학기 삭제 핸들러
-  const handleDeleteSemester = (semester: string) => {
-    const updatedSemesters = deleteSemester(semester);
-    onSemestersChange(updatedSemesters);
-  };
-
-  // 년도 옵션 생성
-  const yearOptions = generateYearOptions();
 
   return (
     <div>
-      <button 
+      <button
         onClick={toggleModal}
         className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-md transition-colors duration-200 flex items-center"
       >
@@ -61,18 +41,18 @@ const SemesterManager: React.FC<SemesterManagerProps> = ({ semesters, onSemester
         학기 관리
       </button>
 
-      <SemesterModal 
+      <SemesterModal
         isOpen={isOpen}
         onClose={toggleModal}
         semesters={semesters}
         yearOptions={yearOptions}
-        onAddSingle={handleAddSemester}
-        onAddMultiple={handleAddMultipleSemesters}
-        onDelete={handleDeleteSemester}
+        onAddSingle={handlers.onAddSingle}
+        onAddMultiple={handlers.onAddMultiple}
+        onDelete={handlers.onDelete}
         semesterToGradeFormat={semesterToGradeFormat}
       />
     </div>
   );
 };
 
-export default SemesterManager; 
+export default SemesterManager;
