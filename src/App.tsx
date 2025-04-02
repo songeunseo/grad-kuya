@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import CourseTable from './components/CourseTable'
 import GraduationCalculator from './components/GraduationCalculator'
 import Auth from './components/Auth'
 import Footer from './components/Footer'
+import LandingPage from './components/LandingPage'
 import { migrateLocalStorageToDB, Course, checkTablesExist, directAddSampleCourse } from './lib/supabase'
 import logo from './assets/logo_grad_kuya.svg'
 import { supabase } from './lib/supabase'
@@ -63,11 +65,8 @@ function App() {
     return <div className="flex items-center justify-center min-h-screen">로딩 중...</div>;
   }
 
-  if (!userId) {
-    return <Auth onLogin={handleLogin} />;
-  }
-
-  return (
+  // 메인 대시보드 컴포넌트
+  const Dashboard = () => (
     <>
       <div className="container mx-auto p-4">
         <header className="flex justify-between items-center mb-8">
@@ -82,13 +81,25 @@ function App() {
           </button>
         </header>
         <div className="space-y-8">
-          <CourseTable userId={userId} onCoursesUpdate={handleCoursesUpdate} />
-          <GraduationCalculator courses={courses} userId={userId} />
+          <CourseTable userId={userId!} onCoursesUpdate={handleCoursesUpdate} />
+          <GraduationCalculator courses={courses} userId={userId!} />
         </div>
       </div>
       <Footer />
     </>
-  )
+  );
+
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={userId ? <Navigate to="/dashboard" /> : <Auth onLogin={handleLogin} />} />
+        <Route path="/signup" element={userId ? <Navigate to="/dashboard" /> : <Auth onLogin={handleLogin} signup={true} />} />
+        <Route path="/dashboard" element={userId ? <Dashboard /> : <Navigate to="/login" />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Router>
+  );
 }
 
 export default App
